@@ -23,6 +23,12 @@ class GroupNameConflictException : GroupException(
     msg = "Group name already exists",
 )
 
+class CreateBadGroupNameException : GroupException(
+    errorCode = 0,
+    httpStatusCode = HttpStatus.BAD_REQUEST,
+    msg = "Bad groupname",
+)
+
 class GroupCodeConflictException : GroupException(
     errorCode = 0,
     httpStatusCode = HttpStatus.CONFLICT,
