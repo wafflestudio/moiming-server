@@ -5,7 +5,9 @@ import com.wafflestudio.spring2025.user.dto.LoginResponse
 import com.wafflestudio.spring2025.user.dto.LogoutResponse
 import com.wafflestudio.spring2025.user.dto.RegisterRequest
 import com.wafflestudio.spring2025.user.dto.RegisterResponse
+import com.wafflestudio.spring2025.user.dto.SocialLoginRequest
 import com.wafflestudio.spring2025.user.service.JwtBlacklistService
+import com.wafflestudio.spring2025.user.service.OAuthService
 import com.wafflestudio.spring2025.user.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Auth", description = "인증 API")
 class AuthController(
     private val userService: UserService,
+    private val oauthService: OAuthService,
     private val jwtBlacklistService: JwtBlacklistService,
 ) {
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다")
@@ -49,7 +52,7 @@ class AuthController(
     @Operation(summary = "로그인", description = "username과 password로 로그인하여 JWT 토큰을 발급받습니다")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "201", description = "로그인 성공, JWT 토큰 반환"),
+            ApiResponse(responseCode = "200", description = "로그인 성공, JWT 토큰 반환"),
             ApiResponse(responseCode = "401", description = "인증 실패 (username 또는 password 불일치)"),
         ],
     )
@@ -62,7 +65,26 @@ class AuthController(
                 username = loginRequest.username,
                 password = loginRequest.password,
             )
-        return ResponseEntity.status(HttpStatus.CREATED).body(LoginResponse(token))
+        return ResponseEntity.status(HttpStatus.OK).body(LoginResponse(token))
+    }
+
+    @Operation(summary = "소셜 로그인", description = "구글, 카카오 등 소셜 로그인으로 JWT 토큰을 발급받습니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "로그인 성공, JWT 토큰 반환"),
+            ApiResponse(responseCode = "401", description = "인증 실패"), // FIXME 이게 필요한 상황이 있나
+            ApiResponse(responseCode = "404", description = "등록되지 않은 사용자") // 회원가입으로 넘어가야 함
+        ],
+    )
+    @PostMapping("/social")
+    fun social(
+        @RequestBody socialLoginRequest: SocialLoginRequest,
+    ): ResponseEntity<LoginResponse> {
+        val token = oauthService.authenticate( // OAuth access token 아님! 우리 서비스 토큰
+            provider = socialLoginRequest.provider,
+            authCode = socialLoginRequest.code,
+        )
+        return ResponseEntity.status(HttpStatus.OK).body(LoginResponse(token))
     }
 
     @Operation(summary = "로그아웃", description = "현재 JWT 토큰을 블랙리스트에 추가하여 로그아웃합니다")

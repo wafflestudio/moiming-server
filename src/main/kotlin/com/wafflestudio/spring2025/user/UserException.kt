@@ -38,3 +38,10 @@ class AuthenticateException :
         httpStatusCode = HttpStatus.UNAUTHORIZED,
         msg = "Authenticate failed",
     )
+
+class UnregisteredSocialAccountException :
+    UserException(
+        errorCode = 4,
+        httpStatusCode = HttpStatus.NOT_FOUND,
+        msg = "User not found",
+    )
