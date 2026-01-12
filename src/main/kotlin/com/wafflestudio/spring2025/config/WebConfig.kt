@@ -1,6 +1,6 @@
 package com.wafflestudio.spring2025.config
 
-import com.wafflestudio.spring2025.user.UserArgumentResolver
+import com.wafflestudio.spring2025.domain.auth.UserArgumentResolver
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer

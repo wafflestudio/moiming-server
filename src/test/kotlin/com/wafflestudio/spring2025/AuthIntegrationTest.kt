@@ -1,14 +1,14 @@
 package com.wafflestudio.spring2025
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.wafflestudio.spring2025.user.dto.RegisterRequest
+import com.wafflestudio.spring2025.domain.auth.dto.LoginRequest
+import com.wafflestudio.spring2025.domain.auth.dto.RegisterRequest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -25,14 +25,15 @@ class AuthIntegrationTest
     constructor(
         private val mvc: MockMvc,
         private val mapper: ObjectMapper,
+        private val dataGenerator: DataGenerator,
     ) {
         @Test
         fun `should register successfully`() {
             // 회원가입할 수 있다
-            val username = "username1"
-            val password = "qwer1234"
+            val email = "user1@example.com"
+            val name = "user1"
 
-            val request = RegisterRequest(username, password)
+            val request = RegisterRequest(email, name, null)
             mvc
                 .perform(
                     post("/api/v1/auth/register")
@@ -42,12 +43,9 @@ class AuthIntegrationTest
         }
 
         @Test
-        fun `should return 400 error when username is less than 4 characters during registration`() {
-            // 회원가입 시 유저네임이 4자 미만이면 400 에러
-            val username = "use"
-            val password = "qwer1234"
-
-            val request = RegisterRequest(username, password)
+        fun `should return 400 error when email is blank during registration`() {
+            // 회원가입 시 이메일이 비어있으면 400 에러
+            val request = RegisterRequest("", "user", null)
             mvc
                 .perform(
                     post("/api/v1/auth/register")
@@ -57,25 +55,23 @@ class AuthIntegrationTest
         }
 
         @Test
-        fun `should return 400 error when password is less than 4 characters during registration`() {
-            // 회원가입 시 비밀번호가 4자 미만이면 400 에러
-            val username = "username2"
-            val password = "qwe"
-
-            val request = RegisterRequest(username, password)
+        fun `should return 409 error when email already exists during registration`() {
+            // 회원가입 시 이메일이 이미 존재하면 409 에러
+            val (user, token) = dataGenerator.generateUser()
+            val request = RegisterRequest(user.email, user.name, user.profileImage)
             mvc
                 .perform(
                     post("/api/v1/auth/register")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isBadRequest)
+                ).andExpect(status().isConflict)
         }
 
         @Test
         fun `should login successfully`() {
             // 로그인할 수 있다
-            val (user, token) = dataGenerator.generateUser(password = "qwer1234")
-            val request = RegisterRequest(user.username, "qwer1234")
+            val (user, token) = dataGenerator.generateUser()
+            val request = LoginRequest(user.email)
             mvc
                 .perform(
                     post("/api/v1/auth/login")
@@ -85,23 +81,10 @@ class AuthIntegrationTest
         }
 
         @Test
-        fun `should return 401 error when username is incorrect during login`() {
-            // 로그인 시 유저네임이 틀렸다면 401 에러
+        fun `should return 401 error when email is incorrect during login`() {
+            // 로그인 시 이메일이 틀렸다면 401 에러
             val (user, token) = dataGenerator.generateUser()
-            val request = RegisterRequest("wrong-username", "some-password")
-            mvc
-                .perform(
-                    post("/api/v1/auth/login")
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isUnauthorized)
-        }
-
-        @Test
-        fun `should return 401 error when password is incorrect during login`() {
-            // 로그인 시 비밀번호가 틀렸다면 401 에러
-            val (user, token) = dataGenerator.generateUser()
-            val request = RegisterRequest(user.username, "wrong-password")
+            val request = LoginRequest("wrong@example.com")
             mvc
                 .perform(
                     post("/api/v1/auth/login")
@@ -120,7 +103,7 @@ class AuthIntegrationTest
                         .header("Authorization", "Bearer $token")
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isOk)
-                .andExpect(jsonPath("$.username").value(user.username))
+                .andExpect(jsonPath("$.email").value(user.email))
         }
 
         @Test
@@ -144,7 +127,7 @@ class AuthIntegrationTest
                         .header("Authorization", "Bearer $token")
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isOk)
-                .andExpect(jsonPath("$.username").value(user.username))
+                .andExpect(jsonPath("$.email").value(user.email))
             mvc
                 .perform(
                     post("/api/v1/users/logout")
