@@ -9,9 +9,9 @@ data class UserDto(
     val profileImage: String?,
 ) {
     constructor(user: User) : this(
-        id = TODO("User -> UserDto 매핑 구현"),
-        email = TODO("User -> UserDto 매핑 구현"),
-        name = TODO("User -> UserDto 매핑 구현"),
-        profileImage = TODO("User -> UserDto 매핑 구현"),
+        id = user.id!!,
+        email = user.email,
+        name = user.name,
+        profileImage = user.profileImage,
     )
 }

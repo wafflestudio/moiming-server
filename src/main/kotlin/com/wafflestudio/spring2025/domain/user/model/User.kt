@@ -12,6 +12,7 @@ class User(
     var email: String,
     var name: String,
     var profileImage: String? = null,
+    var passwordHash: String? = null,
     @CreatedDate
     var createdAt: Instant? = null,
     @LastModifiedDate
