@@ -15,6 +15,9 @@ jwt:
   secret: this-is-a-very-long-and-secure-secret-key-for-jwt-token-generation
   expiration-in-ms: 86400000
 
+email:
+  from-name: 모이샤
+
 logging:
   level:
     org:
