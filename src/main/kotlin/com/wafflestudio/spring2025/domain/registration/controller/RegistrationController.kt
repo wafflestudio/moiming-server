@@ -23,10 +23,12 @@ import org.springframework.web.bind.annotation.RestController
 class RegistrationController(
     private val registrationService: RegistrationService,
 ) {
-
     @Operation(
         summary = "이벤트 신청",
-        description = "이벤트에 신청합니다. 정원이 남아있으면 CONFIRMED로 등록되고, 정원이 찼으나 대기 명단이 허용된 경우 WAITING으로 등록됩니다. 정원이 찼고 대기 명단이 비활성화된 경우 신청이 거절됩니다. 신청 취소에 사용할 토큰을 함께 반환합니다.",
+        description =
+            "이벤트에 신청합니다. 정원이 남아있으면 CONFIRMED로 등록되고, 정원이 찼으나 대기 명단이 허용된 경우 WAITING으로 등록됩니다. " +
+                "정원이 찼고 대기 명단이 비활성화된 경우 신청이 거절됩니다. " +
+                "신청 취소에 사용할 토큰을 함께 반환합니다.",
     )
     @PostMapping
     fun create(
@@ -51,9 +53,7 @@ class RegistrationController(
     @GetMapping
     fun list(
         @PathVariable eventId: Long,
-    ): ResponseEntity<List<RegistrationDto>> {
-        return ResponseEntity.ok(registrationService.getByEventId(eventId))
-    }
+    ): ResponseEntity<List<RegistrationDto>> = ResponseEntity.ok(registrationService.getByEventId(eventId))
 
     @Operation(
         summary = "이벤트 신청 취소",

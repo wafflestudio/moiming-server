@@ -4,19 +4,19 @@ import com.wafflestudio.spring2025.domain.event.EventDeadlinePassedException
 import com.wafflestudio.spring2025.domain.event.EventFullException
 import com.wafflestudio.spring2025.domain.event.EventNotFoundException
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
-import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationDto
-import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationWithEventDto
-import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
-import com.wafflestudio.spring2025.domain.registration.model.Registration
-import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.RegistrationAlreadyCanceledException
 import com.wafflestudio.spring2025.domain.registration.RegistrationAlreadyExistsException
 import com.wafflestudio.spring2025.domain.registration.RegistrationInvalidTokenException
 import com.wafflestudio.spring2025.domain.registration.RegistrationNotFoundException
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongEmailException
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongNameException
-import com.wafflestudio.spring2025.domain.registration.model.RegistrationTokenPurpose
+import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationDto
+import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationWithEventDto
+import com.wafflestudio.spring2025.domain.registration.model.Registration
+import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationToken
+import com.wafflestudio.spring2025.domain.registration.model.RegistrationTokenPurpose
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationTokenRepository
 import org.springframework.stereotype.Service
@@ -48,9 +48,10 @@ class RegistrationService(
             throw EventDeadlinePassedException()
         }
         val capacity = event.capacity ?: throw IllegalStateException("이벤트의 capacity가 설정되어 있지 않습니다.")
-        val currentConfirmed = registrationRepository
-            .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
-            .toInt()
+        val currentConfirmed =
+            registrationRepository
+                .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
+                .toInt()
 
         if (userId != null && registrationRepository.existsByUserIdAndEventId(userId, eventId)) {
             throw RegistrationAlreadyExistsException()
@@ -105,15 +106,15 @@ class RegistrationService(
         return CreateRegistrationResponse(RegistrationDto(saved), cancelToken)
     }
 
-    fun getByEventId(eventId: Long): List<RegistrationDto> {
-        return registrationRepository.findByEventId(eventId)
+    fun getByEventId(eventId: Long): List<RegistrationDto> =
+        registrationRepository
+            .findByEventId(eventId)
             .map { registration -> RegistrationDto(registration) }
-    }
 
-    fun getByUserId(userId: Long): List<RegistrationDto> {
-        return registrationRepository.findByUserId(userId)
+    fun getByUserId(userId: Long): List<RegistrationDto> =
+        registrationRepository
+            .findByUserId(userId)
             .map { registration -> RegistrationDto(registration) }
-    }
 
     fun getByUserIdWithEvents(
         userId: Long,
@@ -127,9 +128,10 @@ class RegistrationService(
         }
 
         val eventIds = paged.map { it.eventId }.distinct()
-        val eventsById = eventRepository.findAllById(eventIds).associateBy { event ->
-            event.id ?: throw EventNotFoundException()
-        }
+        val eventsById =
+            eventRepository.findAllById(eventIds).associateBy { event ->
+                event.id ?: throw EventNotFoundException()
+            }
 
         return paged.map { registration ->
             val event = eventsById[registration.eventId] ?: throw EventNotFoundException()
@@ -137,13 +139,12 @@ class RegistrationService(
         }
     }
 
-    fun update() {
-        throw UnsupportedOperationException("참여 신청 내 투표 수정은 나중에 구현")
-    }
+    fun update(): Unit = throw UnsupportedOperationException("참여 신청 내 투표 수정은 나중에 구현")
 
     fun confirm(registrationId: Long) {
         val registration =
-            registrationRepository.findById(registrationId)
+            registrationRepository
+                .findById(registrationId)
                 .orElseThrow { RegistrationNotFoundException() }
         if (registration.status == RegistrationStatus.CANCELED) {
             throw RegistrationAlreadyCanceledException()
@@ -182,7 +183,8 @@ class RegistrationService(
         }
 
         val registration =
-            registrationRepository.findById(registrationId)
+            registrationRepository
+                .findById(registrationId)
                 .orElseThrow { RegistrationNotFoundException() }
         if (registration.status == RegistrationStatus.CANCELED) {
             throw RegistrationAlreadyCanceledException()
@@ -202,9 +204,7 @@ class RegistrationService(
         return bytes.joinToString("") { byte -> "%02x".format(byte) }
     }
 
-    private fun generateToken(): String {
-        return UUID.randomUUID().toString().replace("-", "")
-    }
+    private fun generateToken(): String = UUID.randomUUID().toString().replace("-", "")
 
     @Transactional
     fun reconcileWaitlist(eventId: Long) {
@@ -215,10 +215,11 @@ class RegistrationService(
 
         if (available <= 0) return
 
-        val waitings = registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
-            eventId,
-            RegistrationStatus.WAITING
-        )
+        val waitings =
+            registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
+                eventId,
+                RegistrationStatus.WAITING,
+            )
 
         waitings.take(available).forEach { it.status = RegistrationStatus.CONFIRMED }
         registrationRepository.saveAll(waitings.take(available))

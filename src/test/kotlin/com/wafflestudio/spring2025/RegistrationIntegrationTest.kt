@@ -62,8 +62,8 @@ class RegistrationIntegrationTest
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(
-                    status().isOk)
-                .andExpect(jsonPath("$.registration.eventId").value(event.id))
+                    status().isOk,
+                ).andExpect(jsonPath("$.registration.eventId").value(event.id))
                 .andExpect(jsonPath("$.registration.status").value("CONFIRMED"))
                 .andExpect(jsonPath("$.cancelToken").isNotEmpty)
 
@@ -241,8 +241,8 @@ class RegistrationIntegrationTest
             title: String,
             capacity: Int = 10,
             waitlistEnabled: Boolean = false,
-        ): Event {
-            return eventRepository.save(
+        ): Event =
+            eventRepository.save(
                 Event(
                     title = title,
                     description = null,
@@ -255,7 +255,6 @@ class RegistrationIntegrationTest
                     createdBy = createdBy,
                 ),
             )
-        }
 
         @TestConfiguration
         @Order(0)
@@ -270,9 +269,7 @@ class RegistrationIntegrationTest
         private class TestLoggedInUserArgumentResolver(
             private val userRepository: UserRepository,
         ) : HandlerMethodArgumentResolver {
-            override fun supportsParameter(parameter: MethodParameter): Boolean {
-                return parameter.hasParameterAnnotation(LoggedInUser::class.java)
-            }
+            override fun supportsParameter(parameter: MethodParameter): Boolean = parameter.hasParameterAnnotation(LoggedInUser::class.java)
 
             override fun resolveArgument(
                 parameter: MethodParameter,

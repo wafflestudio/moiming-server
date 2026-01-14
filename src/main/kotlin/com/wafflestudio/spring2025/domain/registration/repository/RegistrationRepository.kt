@@ -1,6 +1,5 @@
 package com.wafflestudio.spring2025.domain.registration.repository
 
-import com.sun.java.accessibility.util.EventID
 import com.wafflestudio.spring2025.domain.registration.model.Registration
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import org.springframework.data.repository.ListCrudRepository
@@ -29,7 +28,13 @@ interface RegistrationRepository : ListCrudRepository<Registration, Long> {
 
     fun countByEventId(eventID: Long): Long
 
-    fun countByEventIdAndStatus(eventID: Long, registrationStatus: RegistrationStatus): Long
+    fun countByEventIdAndStatus(
+        eventID: Long,
+        registrationStatus: RegistrationStatus,
+    ): Long
 
-    fun findByEventIdAndStatusOrderByCreatedAtAsc(eventID: Long, registrationStatus: RegistrationStatus): List<Registration>
+    fun findByEventIdAndStatusOrderByCreatedAtAsc(
+        eventID: Long,
+        registrationStatus: RegistrationStatus,
+    ): List<Registration>
 }
