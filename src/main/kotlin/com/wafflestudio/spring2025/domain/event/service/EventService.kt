@@ -53,11 +53,17 @@ class EventService(
         TODO("일정 삭제 구현")
     }
 
-    fun registerUser(eventId: Long, userId: Long?) {
+    fun registerUser(
+        eventId: Long,
+        userId: Long?,
+    ) {
         TODO("이벤트 신청 구현")
     }
 
-    fun unregisterUser(eventId: Long, registrationId: Long) {
+    fun unregisterUser(
+        eventId: Long,
+        registrationId: Long,
+    ) {
         TODO("이벤트 신청 취소 구현")
     }
 }

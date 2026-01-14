@@ -11,26 +11,30 @@ sealed class EventException(
     cause: Throwable? = null,
 ) : DomainException(errorCode, httpStatusCode, msg, cause)
 
-class EventNotFoundException : EventException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.NOT_FOUND,
-    msg = "Event not found",
-)
+class EventNotFoundException :
+    EventException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.NOT_FOUND,
+        msg = "Event not found",
+    )
 
-class EventFullException : EventException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.CONFLICT,
-    msg = "Event is full",
-)
+class EventFullException :
+    EventException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.CONFLICT,
+        msg = "Event is full",
+    )
 
-class EventDeadlinePassedException : EventException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.BAD_REQUEST,
-    msg = "Event registration deadline has passed",
-)
+class EventDeadlinePassedException :
+    EventException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        msg = "Event registration deadline has passed",
+    )
 
-class EventUnauthorizedException : EventException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.FORBIDDEN,
-    msg = "Not authorized to modify this event",
-)
+class EventUnauthorizedException :
+    EventException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        msg = "Not authorized to modify this event",
+    )

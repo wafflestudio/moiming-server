@@ -6,6 +6,8 @@ import java.time.Instant
 
 interface EventRepository : ListCrudRepository<Event, Long> {
     fun findByCreatedByOrderByStartAtDesc(createdBy: Long): List<Event>
+
     fun findByStartAtAfterOrderByStartAtAsc(now: Instant): List<Event>
+
     fun findTop3ByStartAtAfterOrderByStartAtAsc(now: Instant): List<Event>
 }

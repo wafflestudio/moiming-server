@@ -1,10 +1,9 @@
 package com.wafflestudio.spring2025.domain.user.controller
 
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
+import com.wafflestudio.spring2025.domain.auth.service.AuthService
 import com.wafflestudio.spring2025.domain.user.dto.GetMeResponse
-import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
 import com.wafflestudio.spring2025.domain.user.model.User
-import com.wafflestudio.spring2025.domain.auth.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/users")
 @Tag(name = "User", description = "사용자 API")
 class UserController(
-    private val userService: UserService,
+    private val authService: AuthService,
 ) {
     @Operation(summary = "본인 정보 조회", description = "로그인한 사용자의 정보를 조회합니다")
     @ApiResponses(

@@ -32,20 +32,21 @@ class AuthIntegrationTest
             // 회원가입할 수 있다
             val email = "user1@example.com"
             val name = "user1"
+            val password = "password"
 
-            val request = RegisterRequest(email, name, null)
+            val request = RegisterRequest(email, name, password)
             mvc
                 .perform(
                     post("/api/v1/auth/register")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isCreated)
+                ).andExpect(status().isOk)
         }
 
         @Test
         fun `should return 400 error when email is blank during registration`() {
             // 회원가입 시 이메일이 비어있으면 400 에러
-            val request = RegisterRequest("", "user", null)
+            val request = RegisterRequest("", "user", "password")
             mvc
                 .perform(
                     post("/api/v1/auth/register")
@@ -58,7 +59,7 @@ class AuthIntegrationTest
         fun `should return 409 error when email already exists during registration`() {
             // 회원가입 시 이메일이 이미 존재하면 409 에러
             val (user, token) = dataGenerator.generateUser()
-            val request = RegisterRequest(user.email, user.name, user.profileImage)
+            val request = RegisterRequest(user.email, user.name, "password", user.profileImage)
             mvc
                 .perform(
                     post("/api/v1/auth/register")

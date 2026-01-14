@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.time.Instant
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -36,7 +35,9 @@ class EventController(
 
     @Operation(summary = "이벤트 목록 조회", description = "작성자 기준 이벤트 목록을 조회합니다")
     @GetMapping
-    fun list(@LoggedInUser user: User): ResponseEntity<List<EventDto>> {
+    fun list(
+        @LoggedInUser user: User,
+    ): ResponseEntity<List<EventDto>> {
         TODO("이벤트 목록 조회 API 구현")
     }
 

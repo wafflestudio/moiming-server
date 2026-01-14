@@ -3,7 +3,6 @@ package com.wafflestudio.spring2025.domain.auth.service
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
-import java.util.concurrent.TimeUnit
 
 @Service
 class JwtBlacklistService(

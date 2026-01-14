@@ -33,7 +33,9 @@ class RegistrationController(
 
     @Operation(summary = "이벤트 신청 목록 조회", description = "이벤트 신청 목록을 조회합니다")
     @GetMapping
-    fun list(@PathVariable eventId: Long): ResponseEntity<List<RegistrationDto>> {
+    fun list(
+        @PathVariable eventId: Long,
+    ): ResponseEntity<List<RegistrationDto>> {
         TODO("이벤트 신청 목록 조회 API 구현")
     }
 

@@ -11,20 +11,23 @@ sealed class RegistrationException(
     cause: Throwable? = null,
 ) : DomainException(errorCode, httpStatusCode, msg, cause)
 
-class RegistrationNotFoundException : RegistrationException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.NOT_FOUND,
-    msg = "Registration not found",
-)
+class RegistrationNotFoundException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.NOT_FOUND,
+        msg = "Registration not found",
+    )
 
-class RegistrationAlreadyExistsException : RegistrationException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.CONFLICT,
-    msg = "Registration already exists",
-)
+class RegistrationAlreadyExistsException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.CONFLICT,
+        msg = "Registration already exists",
+    )
 
-class RegistrationUnauthorizedException : RegistrationException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.FORBIDDEN,
-    msg = "Not authorized to manage registrations",
-)
+class RegistrationUnauthorizedException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        msg = "Not authorized to manage registrations",
+    )

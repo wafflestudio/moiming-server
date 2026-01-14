@@ -5,6 +5,10 @@ import com.wafflestudio.spring2025.domain.registration.model.RegistrationTokenPu
 import org.springframework.data.repository.ListCrudRepository
 
 interface RegistrationTokenRepository : ListCrudRepository<RegistrationToken, Long> {
-    fun findByTokenHashAndPurpose(tokenHash: String, purpose: RegistrationTokenPurpose): RegistrationToken?
+    fun findByTokenHashAndPurpose(
+        tokenHash: String,
+        purpose: RegistrationTokenPurpose,
+    ): RegistrationToken?
+
     fun findByRegistrationId(registrationId: Long): List<RegistrationToken>
 }

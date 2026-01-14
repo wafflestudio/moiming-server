@@ -7,16 +7,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class UserIdentityDto(
     @Schema(description = "소셜 계정 ID")
     val id: Long,
-
     @Schema(description = "사용자 ID")
     val userId: Long,
-
     @Schema(description = "소셜 로그인 제공자")
     val provider: String,
-
     @Schema(description = "제공자 사용자 ID")
     val providerUserId: String,
-
     @Schema(description = "생성 일시 (epoch milliseconds)")
     val createdAt: Long,
 ) {

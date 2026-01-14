@@ -27,6 +27,5 @@ class JwtAuthenticationFilter(
         TODO("Authorization 헤더에서 토큰 추출 구현")
     }
 
-    private fun isPublicPath(path: String): Boolean =
-        TODO("인증 제외 경로 매칭 구현")
+    private fun isPublicPath(path: String): Boolean = TODO("인증 제외 경로 매칭 구현")
 }

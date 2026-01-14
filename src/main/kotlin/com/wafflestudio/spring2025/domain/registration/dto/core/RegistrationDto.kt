@@ -8,22 +8,16 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class RegistrationDto(
     @Schema(description = "신청 ID")
     val id: Long,
-
     @Schema(description = "사용자 ID")
     val userId: Long?,
-
     @Schema(description = "이벤트 ID")
     val eventId: Long,
-
     @Schema(description = "비회원 이름")
     val guestName: String?,
-
     @Schema(description = "비회원 이메일")
     val guestEmail: String?,
-
     @Schema(description = "신청 상태")
     val status: RegistrationStatus,
-
     @Schema(description = "신청 일시 (epoch milliseconds)")
     val createdAt: Long,
 ) {

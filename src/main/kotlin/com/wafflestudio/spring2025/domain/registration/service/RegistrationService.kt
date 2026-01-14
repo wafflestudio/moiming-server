@@ -8,7 +8,12 @@ import org.springframework.stereotype.Service
 class RegistrationService(
     private val registrationRepository: RegistrationRepository,
 ) {
-    fun create(userId: Long?, eventId: Long, guestName: String?, guestEmail: String?): RegistrationDto {
+    fun create(
+        userId: Long?,
+        eventId: Long,
+        guestName: String?,
+        guestEmail: String?,
+    ): RegistrationDto {
         TODO("이벤트 신청 생성 구현")
     }
 

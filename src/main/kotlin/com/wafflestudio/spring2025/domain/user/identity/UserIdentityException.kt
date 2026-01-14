@@ -11,20 +11,23 @@ sealed class UserIdentityException(
     cause: Throwable? = null,
 ) : DomainException(errorCode, httpStatusCode, msg, cause)
 
-class UserIdentityNotFoundException : UserIdentityException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.NOT_FOUND,
-    msg = "User identity not found",
-)
+class UserIdentityNotFoundException :
+    UserIdentityException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.NOT_FOUND,
+        msg = "User identity not found",
+    )
 
-class UserIdentityAlreadyLinkedException : UserIdentityException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.CONFLICT,
-    msg = "User identity already linked",
-)
+class UserIdentityAlreadyLinkedException :
+    UserIdentityException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.CONFLICT,
+        msg = "User identity already linked",
+    )
 
-class UserIdentityUnauthorizedException : UserIdentityException(
-    errorCode = 0,
-    httpStatusCode = HttpStatus.FORBIDDEN,
-    msg = "Not authorized to access this user identity",
-)
+class UserIdentityUnauthorizedException :
+    UserIdentityException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        msg = "Not authorized to access this user identity",
+    )
