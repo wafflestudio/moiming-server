@@ -25,16 +25,18 @@ class DataGenerator(
         val token = jwtTokenProvider.createToken(user.email)
         return user to token
     }
+
     fun generateUserWithPassword(password: String = "testPassword123"): Pair<User, String> {
         val email = "user-${UUID.randomUUID()}@example.com"
-        val user = userRepository.save(
-            User(
-                email = email,
-                name = "user",
-                passwordHash = BCrypt.hashpw(password, BCrypt.gensalt()),
-                profileImage = null,
-            ),
-        )
+        val user =
+            userRepository.save(
+                User(
+                    email = email,
+                    name = "user",
+                    passwordHash = BCrypt.hashpw(password, BCrypt.gensalt()),
+                    profileImage = null,
+                ),
+            )
         val token = jwtTokenProvider.createToken(user.email)
         return user to token
     }

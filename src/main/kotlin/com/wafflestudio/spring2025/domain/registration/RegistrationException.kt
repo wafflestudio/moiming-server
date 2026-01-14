@@ -31,3 +31,31 @@ class RegistrationUnauthorizedException :
         httpStatusCode = HttpStatus.FORBIDDEN,
         msg = "Not authorized to manage registrations",
     )
+
+class RegistrationWrongNameException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        msg = "Wrong guest name",
+    )
+
+class RegistrationWrongEmailException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        msg = "Wrong guest email",
+    )
+
+class RegistrationInvalidTokenException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        msg = "Invalid registration token",
+    )
+
+class RegistrationAlreadyCanceledException :
+    RegistrationException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.CONFLICT,
+        msg = "Registration already canceled",
+    )

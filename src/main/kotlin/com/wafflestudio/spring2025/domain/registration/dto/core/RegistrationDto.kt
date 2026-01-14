@@ -22,12 +22,12 @@ data class RegistrationDto(
     val createdAt: Long,
 ) {
     constructor(registration: Registration) : this(
-        id = TODO("Registration -> RegistrationDto 매핑 구현"),
-        userId = TODO("Registration -> RegistrationDto 매핑 구현"),
-        eventId = TODO("Registration -> RegistrationDto 매핑 구현"),
-        guestName = TODO("Registration -> RegistrationDto 매핑 구현"),
-        guestEmail = TODO("Registration -> RegistrationDto 매핑 구현"),
-        status = TODO("Registration -> RegistrationDto 매핑 구현"),
-        createdAt = TODO("Registration -> RegistrationDto 매핑 구현"),
+        id = registration.id!!,
+        userId = registration.userId,
+        eventId = registration.eventId,
+        guestName = registration.guestName,
+        guestEmail = registration.guestEmail,
+        status = registration.status,
+        createdAt = registration.createdAt!!.toEpochMilli(),
     )
 }
