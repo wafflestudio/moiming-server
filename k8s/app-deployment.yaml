@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: spring-app
-          image: # TODO: Docker Hub 이미지 경로 여기 입력하면 됨
+          image: docker.io/picokosmos/spring-app:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -24,6 +24,16 @@ spec:
           env:
             - name: SPRING_CONFIG_LOCATION
               value: /config/application.yaml
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
           volumeMounts:
             - name: config-volume
               mountPath: /config

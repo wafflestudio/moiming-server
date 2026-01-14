@@ -41,3 +41,8 @@ out/
 
 ### Environment Variables ###
 .env
+
+### Production Configuration ###
+src/main/resources/application-prod.yaml
+k8s/app-secrets.yaml
+k3s-kubeconfig.yaml

@@ -1,0 +1,92 @@
+name: CD Pipeline - Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: picokosmos
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: docker.io/picokosmos/spring-app:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Create Kubernetes secret
+        run: |
+          kubectl create secret generic app-secrets \
+            --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy ConfigMap
+        run: kubectl apply -f k8s/app-configmap.yaml
+
+      - name: Deploy MySQL
+        run: kubectl apply -f k8s/mysql-deployment.yaml
+
+      - name: Deploy Redis
+        run: kubectl apply -f k8s/redis-deployment.yaml
+
+      - name: Deploy Spring Boot application
+        run: kubectl apply -f k8s/app-deployment.yaml
+
+      - name: Wait for MySQL to be ready
+        run: kubectl wait --for=condition=ready pod -l app=mysql --timeout=300s
+
+      - name: Wait for Redis to be ready
+        run: kubectl wait --for=condition=ready pod -l app=redis --timeout=120s
+
+      - name: Restart application pods to pick up new image
+        run: kubectl rollout restart deployment/spring-app
+
+      - name: Wait for application deployment
+        run: kubectl rollout status deployment/spring-app --timeout=300s
+
+      - name: Get deployment status
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods
+          echo ""
+          echo "=== Services ==="
+          kubectl get services
+          echo ""
+          echo "=== Application logs (last 50 lines) ==="
+          kubectl logs -l app=spring-app --tail=50 --prefix=true || echo "No logs yet"
+
+      - name: Check application health
+        run: |
+          echo "Waiting for LoadBalancer IP..."
+          sleep 10
+          kubectl get service spring-app

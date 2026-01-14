@@ -8,7 +8,7 @@ data:
       datasource:
         url: jdbc:mysql://mysql:3306/moisha?allowPublicKeyRetrieval=true
         username: user
-        password: somepassword
+        # Password will be injected via environment variable
         driver-class-name: com.mysql.cj.jdbc.Driver
       flyway:
         enabled: true
@@ -18,20 +18,16 @@ data:
           port: 6379
 
     jwt:
-      secret: this-is-a-very-long-and-secure-secret-key-for-jwt-token-generation
+      # Secret will be injected via environment variable
       expiration-in-ms: 86400000
+
+    email:
+      from-name: 모이샤
 
     logging:
       level:
-        org:
-          springframework:
-            data:
-              jdbc: DEBUG
-            jdbc:
-              core:
-                JdbcTemplate: DEBUG
-                namedparam:
-                  NamedParameterJdbcTemplate: TRACE
+        root: INFO
+        com.wafflestudio: INFO
 
     management:
       endpoints:
