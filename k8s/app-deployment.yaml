@@ -34,6 +34,15 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: JWT_SECRET
+            - name: SENDGRID_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SENDGRID_API_KEY
+            - name: EMAIL_FROM_ADDRESS
+              value: "picokosmos@gmail.com"
+            - name: EMAIL_SERVICE_DOMAIN
+              value: "d3e23xs1dwlmd7.cloudfront.net"
           volumeMounts:
             - name: config-volume
               mountPath: /config

@@ -48,6 +48,7 @@ jobs:
             --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
             --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --from-literal=SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy ConfigMap
