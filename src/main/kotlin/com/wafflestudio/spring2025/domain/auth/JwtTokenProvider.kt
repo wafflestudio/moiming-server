@@ -1,8 +1,12 @@
 package com.wafflestudio.spring2025.domain.auth
 
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.util.Date
+import java.util.UUID
 
 @Component
 class JwtTokenProvider(
@@ -13,7 +17,7 @@ class JwtTokenProvider(
 ) {
     private val key = Keys.hmacShaKeyFor(secretKey.toByteArray())
 
-    fun createToken(email: String): String {
+    fun createToken(userId: Long): String {
         val now = Date()
         val validity = Date(now.time + expirationInMs)
 
@@ -21,16 +25,15 @@ class JwtTokenProvider(
 
         return Jwts
             .builder()
-            .setSubject(email)
+            .setSubject(userId.toString())
             .setId(jti)
-            .claim("jti", jti)
             .setIssuedAt(now)
             .setExpiration(validity)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact()
     }
 
-    fun getEmail(token: String): String =
+    fun getUserId(token: String): Long =
         Jwts
             .parserBuilder()
             .setSigningKey(key)
@@ -38,6 +41,16 @@ class JwtTokenProvider(
             .parseClaimsJws(token)
             .body
             .subject
+            .toLong()
+
+    fun getJti(token: String): String? =
+        Jwts
+            .parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .body
+            .id
 
     fun validateToken(token: String): Boolean {
         try {

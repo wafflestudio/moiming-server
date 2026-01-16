@@ -1,6 +1,5 @@
 package com.wafflestudio.spring2025.domain.auth
 
-import com.wafflestudio.spring2025.domain.auth.service.JwtBlacklistService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -11,7 +10,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
-    private val jwtBlacklistService: JwtBlacklistService,
+    // private val jwtBlacklistService: JwtBlacklistService,
 ) : OncePerRequestFilter() {
     private val pathMatcher = AntPathMatcher()
 
@@ -32,17 +31,14 @@ class JwtAuthenticationFilter(
             return
         }
 
-        val jti = jwtTokenProvider.getJti(token)
-        if (jti != null) {
-            val blacklisted = redisTemplate.opsForValue().get("blacklist:$jti")
-            if (blacklisted != null) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token is blacklisted")
-                return
-            }
-        }
+//        val jti = jwtTokenProvider.getJti(token)
+//        if (jti != null && jwtBlacklistService.isBlacklisted(jti)) {
+//            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token is blacklisted")
+//            return
+//        }
 
-        val email = jwtTokenProvider.getEmail(token)
-        request.setAttribute("email", email)
+        val userId = jwtTokenProvider.getUserId(token)
+        request.setAttribute("userId", userId)
 
         filterChain.doFilter(request, response)
     }
@@ -56,7 +52,7 @@ class JwtAuthenticationFilter(
         }
     }
 
-    private fun isPublicPath(path: String): Boolean = 
+    private fun isPublicPath(path: String): Boolean =
         pathMatcher.match("/api/v1/auth/**", path) ||
             pathMatcher.match("/swagger-ui/**", path) ||
             pathMatcher.match("/v3/api-docs/**", path) ||
