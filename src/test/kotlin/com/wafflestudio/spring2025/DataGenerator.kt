@@ -22,7 +22,7 @@ class DataGenerator(
                     profileImage = null,
                 ),
             )
-        val token = jwtTokenProvider.createToken(user.email)
+        val token = jwtTokenProvider.createToken(user.id!!)
         return user to token
     }
 
@@ -37,7 +37,7 @@ class DataGenerator(
                     profileImage = null,
                 ),
             )
-        val token = jwtTokenProvider.createToken(user.email)
+        val token = jwtTokenProvider.createToken(user.id!!)
         return user to token
     }
 }

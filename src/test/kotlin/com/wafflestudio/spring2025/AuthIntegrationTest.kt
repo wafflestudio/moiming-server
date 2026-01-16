@@ -32,15 +32,15 @@ class AuthIntegrationTest
             // 회원가입할 수 있다
             val email = "user1@example.com"
             val name = "user1"
-            val password = "password"
+            val password = "password123"
 
             val request = SignupRequest(email, name, password)
             mvc
                 .perform(
-                    post("/api/v1/auth/register")
+                    post("/api/v1/auth/signup")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isOk)
+                ).andExpect(status().isCreated)
         }
 
         @Test
@@ -49,7 +49,7 @@ class AuthIntegrationTest
             val request = SignupRequest("", "user", "password")
             mvc
                 .perform(
-                    post("/api/v1/auth/register")
+                    post("/api/v1/auth/signup")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isBadRequest)
@@ -62,7 +62,7 @@ class AuthIntegrationTest
             val request = SignupRequest(user.email, user.name, "password", user.profileImage)
             mvc
                 .perform(
-                    post("/api/v1/auth/register")
+                    post("/api/v1/auth/signup")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isConflict)
