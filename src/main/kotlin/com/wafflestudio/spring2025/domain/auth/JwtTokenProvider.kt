@@ -14,14 +14,41 @@ class JwtTokenProvider(
     private val key = Keys.hmacShaKeyFor(secretKey.toByteArray())
 
     fun createToken(email: String): String {
-        TODO("JWT 토큰 생성 구현")
+        val now = Date()
+        val validity = Date(now.time + expirationInMs)
+
+        val jti = UUID.randomUUID().toString()
+
+        return Jwts
+            .builder()
+            .setSubject(email)
+            .setId(jti)
+            .claim("jti", jti)
+            .setIssuedAt(now)
+            .setExpiration(validity)
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact()
     }
 
-    fun getEmail(token: String): String {
-        TODO("JWT에서 이메일 추출 구현")
-    }
+    fun getEmail(token: String): String =
+        Jwts
+            .parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .body
+            .subject
 
     fun validateToken(token: String): Boolean {
-        TODO("JWT 유효성 검증 구현")
+        try {
+            Jwts
+                .parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+            return true
+        } catch (e: Exception) {
+        }
+        return false
     }
 }

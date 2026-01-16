@@ -20,12 +20,45 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        TODO("JWT 인증 필터 처리 구현")
+        if (isPublicPath(request.requestURI)) {
+            filterChain.doFilter(request, response)
+            return
+        }
+
+        val token = resolveToken(request)
+
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or missing token")
+            return
+        }
+
+        val jti = jwtTokenProvider.getJti(token)
+        if (jti != null) {
+            val blacklisted = redisTemplate.opsForValue().get("blacklist:$jti")
+            if (blacklisted != null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token is blacklisted")
+                return
+            }
+        }
+
+        val email = jwtTokenProvider.getEmail(token)
+        request.setAttribute("email", email)
+
+        filterChain.doFilter(request, response)
     }
 
     private fun resolveToken(request: HttpServletRequest): String? {
-        TODO("Authorization 헤더에서 토큰 추출 구현")
+        val bearerToken = request.getHeader("Authorization")
+        return if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            bearerToken.substring(7)
+        } else {
+            null
+        }
     }
 
-    private fun isPublicPath(path: String): Boolean = TODO("인증 제외 경로 매칭 구현")
+    private fun isPublicPath(path: String): Boolean = 
+        pathMatcher.match("/api/v1/auth/**", path) ||
+            pathMatcher.match("/swagger-ui/**", path) ||
+            pathMatcher.match("/v3/api-docs/**", path) ||
+            pathMatcher.match("/api/actuator/health", path)
 }
