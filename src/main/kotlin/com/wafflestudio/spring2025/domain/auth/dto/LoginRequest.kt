@@ -6,4 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class LoginRequest(
     @Schema(description = "사용자 이메일", example = "user@example.com", required = true)
     val email: String,
+    @Schema(description = "사용자 비밀번호", example = "mypassword", required = true)
+    val password: String,
 )

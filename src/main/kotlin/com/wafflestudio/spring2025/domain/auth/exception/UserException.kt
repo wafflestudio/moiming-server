@@ -22,7 +22,22 @@ class SignUpBadEmailException :
     UserException(
         errorCode = 0,
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        msg = "Bad email",
+        msg = "Invalid email format",
+    )
+
+class SignUpBadPasswordException(
+    msg: String = "Invalid password",
+) : UserException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        msg = msg,
+    )
+
+class SignUpBadNameException :
+    UserException(
+        errorCode = 0,
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        msg = "Name cannot be empty",
     )
 
 class AuthenticateException :
