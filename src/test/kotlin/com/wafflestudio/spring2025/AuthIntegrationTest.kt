@@ -3,6 +3,7 @@ package com.wafflestudio.spring2025
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wafflestudio.spring2025.domain.auth.dto.LoginRequest
 import com.wafflestudio.spring2025.domain.auth.dto.RegisterRequest
+import com.wafflestudio.spring2025.domain.auth.dto.SignupRequest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -28,13 +29,13 @@ class AuthIntegrationTest
         private val dataGenerator: DataGenerator,
     ) {
         @Test
-        fun `should register successfully`() {
+        fun `should signup successfully`() {
             // 회원가입할 수 있다
             val email = "user1@example.com"
             val name = "user1"
             val password = "password"
 
-            val request = RegisterRequest(email, name, password)
+            val request = SignupRequest(email, name, password)
             mvc
                 .perform(
                     post("/api/v1/auth/register")
@@ -44,9 +45,9 @@ class AuthIntegrationTest
         }
 
         @Test
-        fun `should return 400 error when email is blank during registration`() {
+        fun `should return 400 error when email is blank during signup`() {
             // 회원가입 시 이메일이 비어있으면 400 에러
-            val request = RegisterRequest("", "user", "password")
+            val request = SignupRequest("", "user", "password")
             mvc
                 .perform(
                     post("/api/v1/auth/register")
@@ -56,10 +57,10 @@ class AuthIntegrationTest
         }
 
         @Test
-        fun `should return 409 error when email already exists during registration`() {
+        fun `should return 409 error when email already exists during signup`() {
             // 회원가입 시 이메일이 이미 존재하면 409 에러
             val (user, token) = dataGenerator.generateUser()
-            val request = RegisterRequest(user.email, user.name, "password", user.profileImage)
+            val request = SignupRequest(user.email, user.name, "password", user.profileImage)
             mvc
                 .perform(
                     post("/api/v1/auth/register")
@@ -69,23 +70,23 @@ class AuthIntegrationTest
         }
 
         @Test
-        fun `should login successfully`() {
+        fun `should login with email successfully`() {
             // 로그인할 수 있다
-            val (user, token) = dataGenerator.generateUser()
-            val request = LoginRequest(user.email)
+            val password = "myPassword"
+            val (user, token) = dataGenerator.generateUserWithPassword(password)
+            val request = LoginRequest(email = user.email, password = password)
             mvc
                 .perform(
                     post("/api/v1/auth/login")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isCreated)
+                ).andExpect(status().isOk)
         }
 
         @Test
         fun `should return 401 error when email is incorrect during login`() {
             // 로그인 시 이메일이 틀렸다면 401 에러
-            val (user, token) = dataGenerator.generateUser()
-            val request = LoginRequest("wrong@example.com")
+            val request = LoginRequest(email = "wrong@example.com", password = "something")
             mvc
                 .perform(
                     post("/api/v1/auth/login")
