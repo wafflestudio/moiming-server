@@ -2,7 +2,6 @@ package com.wafflestudio.spring2025
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wafflestudio.spring2025.domain.auth.dto.LoginRequest
-import com.wafflestudio.spring2025.domain.auth.dto.RegisterRequest
 import com.wafflestudio.spring2025.domain.auth.dto.SignupRequest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
