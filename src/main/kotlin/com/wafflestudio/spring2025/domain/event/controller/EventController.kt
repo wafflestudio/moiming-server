@@ -5,6 +5,7 @@ import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
 import com.wafflestudio.spring2025.domain.event.dto.request.CreateEventRequest
 import com.wafflestudio.spring2025.domain.event.dto.request.UpdateEventRequest
 import com.wafflestudio.spring2025.domain.event.dto.core.EventDto
+import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.service.EventService
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
@@ -54,10 +55,10 @@ class EventController(
     }
 
     @Operation(summary = "이벤트 상세 조회", description = "이벤트 상세 정보를 조회합니다")
-    @GetMapping("/{eventId}") // GET /api/events/{eventId}
+    @GetMapping("/{id}") // GET /api/events/{id}
     fun getById(
         @LoggedInUser user: User,
-        @PathVariable eventId: Long,
+        @PathVariable("id") eventId: Long,
     ): ResponseEntity<EventDetailResponse> {
         val response = eventService.getDetail(
             eventId = eventId,
@@ -66,41 +67,38 @@ class EventController(
         return ResponseEntity.ok(response)
     }
 
-    @Operation(summary = "이벤트 상세 조회", description = "이벤트 상세 정보를 조회합니다")
-    @GetMapping("/{eventId}")
-    fun getById(
-        @PathVariable eventId: Long,
-    ): ResponseEntity<EventDto> {
-        val dto = eventService.getById(eventId)
-        return ResponseEntity.ok(dto)
-    }
-
     @Operation(summary = "이벤트 수정", description = "이벤트를 수정합니다")
-    @PutMapping("/{eventId}")
+    @PutMapping("/{id}") // PUT /api/events/{id}
     fun update(
-        @PathVariable eventId: Long,
+        @LoggedInUser user: User,   // ✅ 인증만 확인
+        @PathVariable("id") eventId: Long,
         @RequestBody request: UpdateEventRequest,
-    ): ResponseEntity<EventDto> {
+    ): ResponseEntity<Event?> {
         val dto = eventService.update(
             eventId = eventId,
             title = request.title,
             description = request.description,
             location = request.location,
-            startAt = request.startAt?.let { Instant.ofEpochMilli(it) },
-            endAt = request.endAt?.let { Instant.ofEpochMilli(it) },
+            startAt = request.startAt,
+            endAt = request.endAt,
             capacity = request.capacity,
             waitlistEnabled = request.waitlistEnabled,
-            registrationDeadline = request.registrationDeadline?.let { Instant.ofEpochMilli(it) },
+            registrationStart = request.registrationStart,
+            registrationDeadline = request.registrationDeadline,
         )
         return ResponseEntity.ok(dto)
     }
 
     @Operation(summary = "이벤트 삭제", description = "이벤트를 삭제합니다")
-    @DeleteMapping("/{eventId}")
+    @DeleteMapping("/{id}") // DELETE /api/events/{id}
     fun delete(
-        @PathVariable eventId: Long,
+        @LoggedInUser user: User,   // ✅ 토큰 유효성만 확인
+        @PathVariable("id") eventId: Long,
     ): ResponseEntity<Unit> {
         eventService.delete(eventId)
         return ResponseEntity.noContent().build()
     }
+
+
+
 }

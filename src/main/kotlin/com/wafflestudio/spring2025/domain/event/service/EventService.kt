@@ -2,15 +2,20 @@ package com.wafflestudio.spring2025.domain.event.service
 
 import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
-import com.wafflestudio.spring2025.domain.event.dto.GuestPreview
-import com.wafflestudio.spring2025.domain.event.dto.MyRole
+import com.wafflestudio.spring2025.domain.event.dto.response.GuestPreview
+import com.wafflestudio.spring2025.domain.event.dto.response.MyRole
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import org.springframework.stereotype.Service
 import java.time.Instant
+import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
+import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
+import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 
 @Service
 class EventService(
     private val eventRepository: EventRepository,
+    private val registrationRepository: RegistrationRepository,
+    private val userRepository: UserRepository,
 ) {
 
     /**
@@ -60,12 +65,59 @@ class EventService(
      * - registrations 도메인 붙기 전: participants/waiting/guests는 기본값으로 내려줌
      */
     fun getDetail(eventId: Long, requesterId: Long): EventDetailResponse {
-        val event: Event = eventRepository.findById(eventId)
-            .orElseThrow { NoSuchElementException("Event not found: $eventId") }
+        val event = eventRepository.findById(eventId).orElseThrow {
+            NoSuchElementException("Event not found: $eventId")
+        }
+
+        val isCreator = event.createdBy == requesterId
+
+        // 내 신청 정보(있으면)
+        val myRegistration = registrationRepository.findByUserIdAndEventId(
+            userId = requesterId,
+            eventId = eventId,
+        )
 
         val myRole = when {
-            event.createdBy == requesterId -> MyRole.CREATOR
-            else -> MyRole.NONE // TODO: registrations 붙으면 PARTICIPANT 판단
+            isCreator -> MyRole.CREATOR
+            myRegistration != null && myRegistration.status != RegistrationStatus.CANCELED -> MyRole.PARTICIPANT
+            else -> MyRole.NONE
+        }
+
+        val currentParticipants = registrationRepository.countByEventIdAndStatus(
+            eventID = eventId,
+            registrationStatus = RegistrationStatus.CONFIRMED,
+        ).toInt()
+
+        val waitingNum: Int? =
+            if (myRegistration?.status == RegistrationStatus.WAITING) {
+                val waitings = registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
+                    eventID = eventId,
+                    registrationStatus = RegistrationStatus.WAITING,
+                )
+                val idx = waitings.indexOfFirst { it.id == myRegistration.id }
+                if (idx >= 0) idx + 1 else null
+            } else {
+                null
+            }
+
+        // ✅ 참여자 미리보기: CONFIRMED 중 userId가 있는 애들만(예: 최대 5명)
+        val confirmedRegs = registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
+            eventID = eventId,
+            registrationStatus = RegistrationStatus.CONFIRMED,
+        )
+
+        val userIds = confirmedRegs.mapNotNull { it.userId }.distinct().take(5)
+
+        val usersById = userRepository.findAllById(userIds)
+            .associateBy { it.id!! }
+
+        val guestsPreview = userIds.mapNotNull { uid ->
+            val u = usersById[uid] ?: return@mapNotNull null
+            GuestPreview(
+                id = u.id!!,
+                name = u.name,
+                profileImage = u.profileImage,
+            )
         }
 
         return EventDetailResponse(
@@ -75,14 +127,15 @@ class EventService(
             startAt = event.startAt,
             endAt = event.endAt,
             capacity = event.capacity,
-            currentParticipants = 0,           // TODO: registrations count로 채우기
+            currentParticipants = currentParticipants,
             registrationStart = event.registrationStart,
             registrationDeadline = event.registrationDeadline,
             myRole = myRole,
-            waitingNum = null,                // TODO: 내 대기 순번 계산
-            guestsPreview = emptyList(),       // TODO: 상위 N명(예: 4명) 미리보기
+            waitingNum = waitingNum,
+            guestsPreview = guestsPreview,
         )
     }
+
 
     fun getById(eventId: Long): Event {
         return eventRepository.findById(eventId)
