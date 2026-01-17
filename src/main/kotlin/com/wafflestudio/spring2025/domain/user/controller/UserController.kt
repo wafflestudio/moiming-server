@@ -33,9 +33,7 @@ class UserController(
     @GetMapping("/me")
     fun me(
         @Parameter(hidden = true) @LoggedInUser user: User,
-    ): ResponseEntity<GetMeResponse> {
-        return ResponseEntity.ok(userService.me(user))
-    }
+    ): ResponseEntity<GetMeResponse> = ResponseEntity.ok(userService.me(user))
 
     @Operation(summary = "로그아웃", description = "현재 JWT 토큰을 무효화합니다")
     @ApiResponses(

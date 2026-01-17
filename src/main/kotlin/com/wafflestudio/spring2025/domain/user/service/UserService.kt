@@ -13,7 +13,5 @@ class UserService(
 ) {
     fun me(
         @Parameter(hidden = true) @LoggedInUser user: User,
-    ): UserDto {
-        return UserDto(user = user)
-    }
+    ): UserDto = UserDto(user = user)
 }
