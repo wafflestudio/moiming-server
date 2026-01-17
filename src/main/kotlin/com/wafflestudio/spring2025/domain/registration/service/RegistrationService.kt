@@ -8,9 +8,12 @@ import com.wafflestudio.spring2025.domain.registration.RegistrationAlreadyCancel
 import com.wafflestudio.spring2025.domain.registration.RegistrationAlreadyExistsException
 import com.wafflestudio.spring2025.domain.registration.RegistrationInvalidTokenException
 import com.wafflestudio.spring2025.domain.registration.RegistrationNotFoundException
+import com.wafflestudio.spring2025.domain.registration.RegistrationUnauthorizedException
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongEmailException
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongNameException
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse
+import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse.Guest
 import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationDto
 import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationWithEventDto
 import com.wafflestudio.spring2025.domain.registration.model.Registration
@@ -19,6 +22,7 @@ import com.wafflestudio.spring2025.domain.registration.model.RegistrationToken
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationTokenPurpose
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationTokenRepository
+import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
@@ -32,6 +36,7 @@ class RegistrationService(
     private val registrationRepository: RegistrationRepository,
     private val eventRepository: EventRepository,
     private val registrationTokenRepository: RegistrationTokenRepository,
+    private val userRepository: UserRepository,
 ) {
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
     private val tokenValidity = Duration.ofHours(24)
@@ -103,13 +108,42 @@ class RegistrationService(
                 purpose = RegistrationTokenPurpose.CANCEL,
             ),
         )
-        return CreateRegistrationResponse(RegistrationDto(saved), cancelToken)
+        val waitingNum =
+            if (saved.status == RegistrationStatus.WAITING) {
+                registrationRepository
+                    .countByEventIdAndStatus(eventId, RegistrationStatus.WAITING)
+                    .toString()
+            } else {
+                null
+            }
+        return CreateRegistrationResponse(waitingNum)
     }
 
-    fun getByEventId(eventId: Long): List<RegistrationDto> =
-        registrationRepository
-            .findByEventId(eventId)
-            .map { registration -> RegistrationDto(registration) }
+    fun getGuestsByEventId(
+        eventId: Long,
+        requesterId: Long,
+    ): RegistrationGuestsResponse {
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+        if (event.createdBy != requesterId) {
+            throw RegistrationUnauthorizedException()
+        }
+
+        val guests =
+            registrationRepository
+                .findByEventId(eventId)
+                .filter { it.status != RegistrationStatus.CANCELED }
+                .map { registration ->
+                    val user = registration.userId?.let { userId -> userRepository.findById(userId).orElse(null) }
+                    Guest(
+                        id = registration.id ?: throw RegistrationNotFoundException(),
+                        name = user?.name ?: registration.guestName.orEmpty(),
+                        email = user?.email ?: registration.guestEmail,
+                        profileImage = null,
+                    )
+                }
+
+        return RegistrationGuestsResponse(guests)
+    }
 
     fun getByUserId(userId: Long): List<RegistrationDto> =
         registrationRepository

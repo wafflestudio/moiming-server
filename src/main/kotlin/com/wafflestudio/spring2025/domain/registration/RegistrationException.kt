@@ -20,7 +20,7 @@ class RegistrationNotFoundException :
 
 class RegistrationAlreadyExistsException :
     RegistrationException(
-        errorCode = 0,
+        errorCode = 1001,
         httpStatusCode = HttpStatus.CONFLICT,
         msg = "Registration already exists",
     )
@@ -34,15 +34,15 @@ class RegistrationUnauthorizedException :
 
 class RegistrationWrongNameException :
     RegistrationException(
-        errorCode = 0,
-        httpStatusCode = HttpStatus.FORBIDDEN,
+        errorCode = 1002,
+        httpStatusCode = HttpStatus.BAD_REQUEST,
         msg = "Wrong guest name",
     )
 
 class RegistrationWrongEmailException :
     RegistrationException(
-        errorCode = 0,
-        httpStatusCode = HttpStatus.FORBIDDEN,
+        errorCode = 1003,
+        httpStatusCode = HttpStatus.BAD_REQUEST,
         msg = "Wrong guest email",
     )
 
