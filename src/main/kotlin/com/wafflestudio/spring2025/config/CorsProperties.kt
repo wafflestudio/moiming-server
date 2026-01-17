@@ -4,8 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "cors")
 data class CorsProperties(
-    val allowedOrigins: String = ""
+    val allowedOrigins: String = "",
 ) {
-    fun getAllowedOriginsList(): List<String> =
-        allowedOrigins.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    fun getAllowedOriginsList(): List<String> = allowedOrigins.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 }
