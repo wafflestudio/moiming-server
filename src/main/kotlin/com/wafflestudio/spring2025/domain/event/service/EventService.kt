@@ -1,15 +1,15 @@
 package com.wafflestudio.spring2025.domain.event.service
 
-import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.GuestPreview
 import com.wafflestudio.spring2025.domain.event.dto.response.MyRole
+import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
-import org.springframework.stereotype.Service
-import java.time.Instant
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
+import org.springframework.stereotype.Service
+import java.time.Instant
 
 @Service
 class EventService(
@@ -17,7 +17,6 @@ class EventService(
     private val registrationRepository: RegistrationRepository,
     private val userRepository: UserRepository,
 ) {
-
     /**
      * 일정 생성
      * - API 설계상 body를 비우고 201 + Location을 주기 위해 생성된 eventId를 반환
@@ -43,18 +42,19 @@ class EventService(
             registrationDeadline = registrationDeadline,
         )
 
-        val event = Event(
-            title = title.trim(),
-            description = description,
-            location = location,
-            startAt = startAt,
-            endAt = endAt,
-            capacity = capacity,
-            waitlistEnabled = waitlistEnabled,
-            registrationStart = registrationStart,
-            registrationDeadline = registrationDeadline,
-            createdBy = createdBy,
-        )
+        val event =
+            Event(
+                title = title.trim(),
+                description = description,
+                location = location,
+                startAt = startAt,
+                endAt = endAt,
+                capacity = capacity,
+                waitlistEnabled = waitlistEnabled,
+                registrationStart = registrationStart,
+                registrationDeadline = registrationDeadline,
+                createdBy = createdBy,
+            )
 
         val saved = eventRepository.save(event)
         return requireNotNull(saved.id) { "Saved event id is null" }
@@ -64,36 +64,45 @@ class EventService(
      * 일정 상세 조회
      * - registrations 도메인 붙기 전: participants/waiting/guests는 기본값으로 내려줌
      */
-    fun getDetail(eventId: Long, requesterId: Long): EventDetailResponse {
-        val event = eventRepository.findById(eventId).orElseThrow {
-            NoSuchElementException("Event not found: $eventId")
-        }
+    fun getDetail(
+        eventId: Long,
+        requesterId: Long,
+    ): EventDetailResponse {
+        val event =
+            eventRepository.findById(eventId).orElseThrow {
+                NoSuchElementException("Event not found: $eventId")
+            }
 
         val isCreator = event.createdBy == requesterId
 
         // 내 신청 정보(있으면)
-        val myRegistration = registrationRepository.findByUserIdAndEventId(
-            userId = requesterId,
-            eventId = eventId,
-        )
+        val myRegistration =
+            registrationRepository.findByUserIdAndEventId(
+                userId = requesterId,
+                eventId = eventId,
+            )
 
-        val myRole = when {
-            isCreator -> MyRole.CREATOR
-            myRegistration != null && myRegistration.status != RegistrationStatus.CANCELED -> MyRole.PARTICIPANT
-            else -> MyRole.NONE
-        }
+        val myRole =
+            when {
+                isCreator -> MyRole.CREATOR
+                myRegistration != null && myRegistration.status != RegistrationStatus.CANCELED -> MyRole.PARTICIPANT
+                else -> MyRole.NONE
+            }
 
-        val currentParticipants = registrationRepository.countByEventIdAndStatus(
-            eventID = eventId,
-            registrationStatus = RegistrationStatus.CONFIRMED,
-        ).toInt()
+        val currentParticipants =
+            registrationRepository
+                .countByEventIdAndStatus(
+                    eventID = eventId,
+                    registrationStatus = RegistrationStatus.CONFIRMED,
+                ).toInt()
 
         val waitingNum: Int? =
             if (myRegistration?.status == RegistrationStatus.WAITING) {
-                val waitings = registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
-                    eventID = eventId,
-                    registrationStatus = RegistrationStatus.WAITING,
-                )
+                val waitings =
+                    registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
+                        eventID = eventId,
+                        registrationStatus = RegistrationStatus.WAITING,
+                    )
                 val idx = waitings.indexOfFirst { it.id == myRegistration.id }
                 if (idx >= 0) idx + 1 else null
             } else {
@@ -101,24 +110,28 @@ class EventService(
             }
 
         // ✅ 참여자 미리보기: CONFIRMED 중 userId가 있는 애들만(예: 최대 5명)
-        val confirmedRegs = registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
-            eventID = eventId,
-            registrationStatus = RegistrationStatus.CONFIRMED,
-        )
+        val confirmedRegs =
+            registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
+                eventID = eventId,
+                registrationStatus = RegistrationStatus.CONFIRMED,
+            )
 
         val userIds = confirmedRegs.mapNotNull { it.userId }.distinct().take(5)
 
-        val usersById = userRepository.findAllById(userIds)
-            .associateBy { it.id!! }
+        val usersById =
+            userRepository
+                .findAllById(userIds)
+                .associateBy { it.id!! }
 
-        val guestsPreview = userIds.mapNotNull { uid ->
-            val u = usersById[uid] ?: return@mapNotNull null
-            GuestPreview(
-                id = u.id!!,
-                name = u.name,
-                profileImage = u.profileImage,
-            )
-        }
+        val guestsPreview =
+            userIds.mapNotNull { uid ->
+                val u = usersById[uid] ?: return@mapNotNull null
+                GuestPreview(
+                    id = u.id!!,
+                    name = u.name,
+                    profileImage = u.profileImage,
+                )
+            }
 
         return EventDetailResponse(
             title = event.title,
@@ -136,15 +149,12 @@ class EventService(
         )
     }
 
-
-    fun getById(eventId: Long): Event {
-        return eventRepository.findById(eventId)
+    fun getById(eventId: Long): Event =
+        eventRepository
+            .findById(eventId)
             .orElseThrow { NoSuchElementException("Event not found: $eventId") }
-    }
 
-    fun getByCreator(createdBy: Long): List<Event> {
-        return eventRepository.findByCreatedByOrderByStartAtDesc(createdBy)
-    }
+    fun getByCreator(createdBy: Long): List<Event> = eventRepository.findByCreatedByOrderByStartAtDesc(createdBy)
 
     fun update(
         eventId: Long,
@@ -158,8 +168,10 @@ class EventService(
         registrationStart: Instant?,
         registrationDeadline: Instant?,
     ): Event {
-        val event = eventRepository.findById(eventId)
-            .orElseThrow { NoSuchElementException("Event not found: $eventId") }
+        val event =
+            eventRepository
+                .findById(eventId)
+                .orElseThrow { NoSuchElementException("Event not found: $eventId") }
 
         // null은 "변경 없음"
         title?.let {
