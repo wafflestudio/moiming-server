@@ -19,6 +19,12 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
+        // CORS preflight 요청은 인증 없이 통과
+        if (request.method == "OPTIONS") {
+            filterChain.doFilter(request, response)
+            return
+        }
+
         if (isPublicPath(request.requestURI)) {
             filterChain.doFilter(request, response)
             return

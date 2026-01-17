@@ -38,3 +38,6 @@ management:
   endpoint:
     health:
       show-details: always
+
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:5173
