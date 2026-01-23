@@ -3,6 +3,10 @@ package com.wafflestudio.spring2025.domain.event.service
 import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.GuestPreview
 import com.wafflestudio.spring2025.domain.event.dto.response.MyRole
+import com.wafflestudio.spring2025.domain.event.exception.EventErrorCode
+import com.wafflestudio.spring2025.domain.event.exception.EventForbiddenException
+import com.wafflestudio.spring2025.domain.event.exception.EventNotFoundException
+import com.wafflestudio.spring2025.domain.event.exception.EventValidationException
 import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
@@ -10,6 +14,7 @@ import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRe
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import java.time.Instant
+import java.util.UUID
 
 @Service
 class EventService(
@@ -19,7 +24,7 @@ class EventService(
 ) {
     /**
      * 일정 생성
-     * - API 설계상 body를 비우고 201 + Location을 주기 위해 생성된 eventId를 반환
+     * - API 설계상 body를 비우고 201 + Location을 주기 위해 생성된 publicId를 반환
      */
     fun create(
         title: String,
@@ -32,7 +37,7 @@ class EventService(
         registrationStart: Instant?,
         registrationDeadline: Instant?,
         createdBy: Long,
-    ): Long {
+    ): String {
         validateCreateOrUpdate(
             title = title,
             startAt = startAt,
@@ -44,6 +49,7 @@ class EventService(
 
         val event =
             Event(
+                publicId = UUID.randomUUID().toString(),
                 title = title.trim(),
                 description = description,
                 location = location,
@@ -57,7 +63,7 @@ class EventService(
             )
 
         val saved = eventRepository.save(event)
-        return requireNotNull(saved.id) { "Saved event id is null" }
+        return saved.publicId
     }
 
     /**
@@ -65,12 +71,15 @@ class EventService(
      * - registrations 도메인 붙기 전: participants/waiting/guests는 기본값으로 내려줌
      */
     fun getDetail(
-        eventId: Long,
+        publicId: String,
         requesterId: Long,
     ): EventDetailResponse {
-        val event =
-            eventRepository.findById(eventId).orElseThrow {
-                NoSuchElementException("Event not found: $eventId")
+        val event = getEventByPublicId(publicId)
+
+        val eventId =
+            requireNotNull(event.id) {
+                // publicId로 조회된 이벤트는 정상이라면 id가 있어야 함 (저장 후 조회 상태)
+                "Event internal id is null: publicId=$publicId"
             }
 
         val isCreator = event.createdBy == requesterId
@@ -150,7 +159,7 @@ class EventService(
     }
 
     fun update(
-        eventId: Long,
+        publicId: String,
         title: String?,
         description: String?,
         location: String?,
@@ -162,17 +171,16 @@ class EventService(
         registrationDeadline: Instant?,
         requesterId: Long,
     ): Event {
-        val event =
-            eventRepository
-                .findById(eventId)
-                .orElseThrow { NoSuchElementException("Event not found: $eventId") }
+        val event = getEventByPublicId(publicId)
 
         // 생성자 권한 체크
         requireCreator(event, requesterId)
 
         // null은 "변경 없음"
         title?.let {
-            require(it.isNotBlank()) { "title must not be blank" }
+            if (it.isBlank()) {
+                throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
+            }
             event.title = it.trim()
         }
         description?.let { event.description = it }
@@ -198,30 +206,28 @@ class EventService(
     }
 
     fun delete(
-        eventId: Long,
+        publicId: String,
         requesterId: Long,
     ) {
-        val event =
-            eventRepository
-                .findById(eventId)
-                .orElseThrow { NoSuchElementException("Event not found: $eventId") }
+        val event = getEventByPublicId(publicId)
 
         // 생성자 권한 체크
         requireCreator(event, requesterId)
 
-        eventRepository.deleteById(eventId)
+        // 내부 PK로 삭제
+        eventRepository.deleteById(requireNotNull(event.id))
     }
+
+    private fun getEventByPublicId(publicId: String): Event =
+        eventRepository.findByPublicId(publicId)
+            ?: throw EventNotFoundException(publicId)
 
     private fun requireCreator(
         event: Event,
         requesterId: Long,
     ) {
         if (event.createdBy != requesterId) {
-            // 프로젝트에 맞는 예외가 있으면 그걸로 교체 (예: ForbiddenException)
-            throw IllegalAccessException(
-                "Only creator can modify/delete this event." +
-                    " requesterId=$requesterId",
-            )
+            throw EventForbiddenException(requesterId)
         }
     }
 
@@ -233,35 +239,37 @@ class EventService(
         registrationStart: Instant?,
         registrationDeadline: Instant?,
     ) {
-        require(title.isNotBlank()) { "title must not be blank" }
-
-        if (startAt != null && endAt != null) {
-            require(startAt.isBefore(endAt)) { "startAt must be before endAt" }
+        if (title.isBlank()) {
+            throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
         }
 
-        if (capacity != null) {
-            require(capacity > 0) { "capacity must be positive" }
+        if (startAt != null && endAt != null && !startAt.isBefore(endAt)) {
+            throw EventValidationException(EventErrorCode.EVENT_TIME_RANGE_INVALID)
+        }
+
+        if (capacity != null && capacity <= 0) {
+            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
         }
 
         // registrationStart / registrationDeadline 관계
-        if (registrationStart != null && registrationDeadline != null) {
-            require(!registrationStart.isAfter(registrationDeadline)) {
-                "registrationStart must be <= registrationDeadline"
-            }
+        if (registrationStart != null && registrationDeadline != null &&
+            registrationStart.isAfter(registrationDeadline)
+        ) {
+            throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
 
-        // registrationDeadline <= startAt (기존 룰 유지)
-        if (registrationDeadline != null && startAt != null) {
-            require(!registrationDeadline.isAfter(startAt)) {
-                "registrationDeadline must be <= startAt"
-            }
+        // registrationDeadline <= startAt
+        if (registrationDeadline != null && startAt != null &&
+            registrationDeadline.isAfter(startAt)
+        ) {
+            throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
 
-        // (선택) registrationStart <= startAt 도 같이 강제하면 더 자연스러움
-        if (registrationStart != null && startAt != null) {
-            require(!registrationStart.isAfter(startAt)) {
-                "registrationStart must be <= startAt"
-            }
+        // registrationStart <= startAt
+        if (registrationStart != null && startAt != null &&
+            registrationStart.isAfter(startAt)
+        ) {
+            throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
     }
 }

@@ -32,7 +32,7 @@ class EventController(
         @LoggedInUser user: User,
         @RequestBody request: CreateEventRequest,
     ): ResponseEntity<Void> {
-        val eventId: Long =
+        val publicId: String =
             eventService.create(
                 title = request.title,
                 description = request.description,
@@ -46,38 +46,35 @@ class EventController(
                 createdBy = user.id!!,
             )
 
-        // response body 비움 + 생성된 리소스 위치(Location) 제공
-        // 201 created 보냄
-        // 204(No content)를 보낼 수도 있지만, 이게 좀 더 명확함
         return ResponseEntity
-            .created(URI.create("/api/events/$eventId"))
+            .created(URI.create("/api/events/$publicId"))
             .build()
     }
 
     @Operation(summary = "이벤트 상세 조회", description = "이벤트 상세 정보를 조회합니다")
-    @GetMapping("/{eventId}") // GET /api/events/{eventId}
+    @GetMapping("/{publicId}") // GET /api/events/{publicId}
     fun getById(
         @LoggedInUser user: User,
-        @PathVariable eventId: Long,
+        @PathVariable publicId: String,
     ): ResponseEntity<EventDetailResponse> {
         val response =
             eventService.getDetail(
-                eventId = eventId,
+                publicId = publicId,
                 requesterId = user.id!!,
             )
         return ResponseEntity.ok(response)
     }
 
     @Operation(summary = "이벤트 수정", description = "이벤트를 수정합니다")
-    @PutMapping("/{eventId}") // PUT /api/events/{eventId}
+    @PutMapping("/{publicId}") // PUT /api/events/{publicId}
     fun update(
         @LoggedInUser user: User,
-        @PathVariable eventId: Long,
+        @PathVariable publicId: String,
         @RequestBody request: UpdateEventRequest,
-    ): ResponseEntity<UpdateEventResponse> { // 변경
+    ): ResponseEntity<UpdateEventResponse> {
         val event =
             eventService.update(
-                eventId = eventId,
+                publicId = publicId,
                 title = request.title,
                 description = request.description,
                 location = request.location,
@@ -90,18 +87,18 @@ class EventController(
                 requesterId = user.id!!,
             )
 
-        val response = UpdateEventResponse.from(event) // ✅ 엔티티 → DTO
+        val response = UpdateEventResponse.from(event)
         return ResponseEntity.ok(response)
     }
 
     @Operation(summary = "이벤트 삭제", description = "이벤트를 삭제합니다")
-    @DeleteMapping("/{eventId}") // DELETE /api/events/{eventId}
+    @DeleteMapping("/{publicId}") // DELETE /api/events/{publicId}
     fun delete(
         @LoggedInUser user: User,
-        @PathVariable eventId: Long,
+        @PathVariable publicId: String,
     ): ResponseEntity<Unit> {
         eventService.delete(
-            eventId = eventId,
+            publicId = publicId,
             requesterId = user.id!!,
         )
         return ResponseEntity.noContent().build()

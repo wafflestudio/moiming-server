@@ -1,8 +1,8 @@
 package com.wafflestudio.spring2025.domain.registration.service
 
-import com.wafflestudio.spring2025.domain.event.EventDeadlinePassedException
-import com.wafflestudio.spring2025.domain.event.EventFullException
-import com.wafflestudio.spring2025.domain.event.EventNotFoundException
+import com.wafflestudio.spring2025.domain.event.exception.EventDeadlinePassedException
+import com.wafflestudio.spring2025.domain.event.exception.EventFullException
+import com.wafflestudio.spring2025.domain.event.exception.EventNotFoundException
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.RegistrationAlreadyCanceledException
 import com.wafflestudio.spring2025.domain.registration.RegistrationAlreadyExistsException

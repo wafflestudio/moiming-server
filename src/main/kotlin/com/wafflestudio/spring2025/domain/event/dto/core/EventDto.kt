@@ -5,8 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "일정 정보")
 data class EventDto(
-    @Schema(description = "일정 ID")
-    val id: Long,
+    @Schema(description = "일정 ID (publicId)")
+    val id: String,
     @Schema(description = "이벤트 제목")
     val title: String,
     @Schema(description = "이벤트 설명")
@@ -33,7 +33,7 @@ data class EventDto(
     val updatedAt: Long?,
 ) {
     constructor(event: Event) : this(
-        id = requireNotNull(event.id) { "Event id is null" },
+        id = event.publicId,
         title = event.title,
         description = event.description,
         location = event.location,

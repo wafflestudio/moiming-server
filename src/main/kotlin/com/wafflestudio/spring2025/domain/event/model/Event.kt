@@ -11,22 +11,32 @@ import java.time.Instant
 class Event(
     @Id
     var id: Long? = null,
+
+    @Column("public_id")
+    var publicId: String,
+
     var title: String,
     var description: String? = null,
     var location: String? = null,
+
     @Column("start_at")
     var startAt: Instant? = null,
     @Column("end_at")
     var endAt: Instant? = null,
+
     var capacity: Int? = null,
+
     @Column("waitlist_enabled")
     var waitlistEnabled: Boolean,
+
     @Column("registration_start")
     var registrationStart: Instant? = null,
     @Column("registration_deadline")
     var registrationDeadline: Instant? = null,
+
     @Column("created_by")
     var createdBy: Long,
+
     @CreatedDate
     @Column("created_at")
     var createdAt: Instant? = null,
@@ -34,3 +44,4 @@ class Event(
     @Column("updated_at")
     var updatedAt: Instant? = null,
 )
+

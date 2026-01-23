@@ -5,6 +5,12 @@ import org.springframework.data.repository.ListCrudRepository
 import java.time.Instant
 
 interface EventRepository : ListCrudRepository<Event, Long> {
+
+    fun findByPublicId(publicId: String): Event?
+
+    fun existsByPublicId(publicId: String): Boolean
+
+
     fun findByCreatedByOrderByStartAtDesc(createdBy: Long): List<Event>
 
     fun findByStartAtAfterOrderByStartAtAsc(now: Instant): List<Event>
