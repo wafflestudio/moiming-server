@@ -135,7 +135,7 @@ class RegistrationService(
                 .map { registration ->
                     val user = registration.userId?.let { userId -> userRepository.findById(userId).orElse(null) }
                     Guest(
-                        id = registration.id ?: throw RegistrationNotFoundException(),
+                        registrationPublicId = registration.registrationPublicId,
                         name = user?.name ?: registration.guestName.orEmpty(),
                         email = user?.email ?: registration.guestEmail,
                         profileImage = null,
@@ -162,6 +162,24 @@ class RegistrationService(
         registrationRepository
             .findByUserId(userId)
             .map { registration -> RegistrationDto(registration) }
+
+    fun getByPublicId(
+        eventId: Long,
+        registrationPublicId: String,
+        requesterId: Long,
+    ): RegistrationDto {
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+        if (event.createdBy != requesterId) {
+            throw RegistrationUnauthorizedException()
+        }
+        val registration =
+            registrationRepository.findByRegistrationPublicId(registrationPublicId)
+                ?: throw RegistrationNotFoundException()
+        if (registration.eventId != eventId) {
+            throw RegistrationNotFoundException()
+        }
+        return RegistrationDto(registration)
+    }
 
     fun getByUserIdWithEvents(
         userId: Long,
@@ -243,6 +261,20 @@ class RegistrationService(
             reconcileWaitlist(registration.eventId)
         }
         registrationTokenRepository.delete(registrationToken)
+    }
+
+    fun cancelWithTokenByPublicId(
+        eventId: Long,
+        registrationPublicId: String,
+        token: String,
+    ) {
+        val registration =
+            registrationRepository.findByRegistrationPublicId(registrationPublicId)
+                ?: throw RegistrationNotFoundException()
+        if (registration.eventId != eventId) {
+            throw RegistrationNotFoundException()
+        }
+        cancelWithToken(registration.id ?: throw RegistrationNotFoundException(), token)
     }
 
     private fun hashToken(token: String): String {

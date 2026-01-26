@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "이벤트 신청 정보")
 data class RegistrationDto(
-    @Schema(description = "신청 ID")
-    val id: Long,
+    @Schema(description = "신청 공개 ID")
+    val registrationPublicId: String,
     @Schema(description = "사용자 ID")
     val userId: Long?,
     @Schema(description = "이벤트 ID")
@@ -22,7 +22,7 @@ data class RegistrationDto(
     val createdAt: Long,
 ) {
     constructor(registration: Registration) : this(
-        id = registration.id!!,
+        registrationPublicId = registration.registrationPublicId,
         userId = registration.userId,
         eventId = registration.eventId,
         guestName = registration.guestName,

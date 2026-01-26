@@ -7,6 +7,8 @@ import org.springframework.data.repository.ListCrudRepository
 interface RegistrationRepository : ListCrudRepository<Registration, Long> {
     fun findByEventId(eventId: Long): List<Registration>
 
+    fun findByRegistrationPublicId(registrationPublicId: String): Registration?
+
     fun findByUserId(userId: Long): List<Registration>
 
     fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Registration>

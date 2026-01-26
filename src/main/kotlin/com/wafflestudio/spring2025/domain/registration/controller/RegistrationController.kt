@@ -57,17 +57,32 @@ class RegistrationController(
         return ResponseEntity.ok(registrationService.getGuestsByEventId(eventId, userId))
     }
 
+    // 나중에 프론트에 요청에 따라 수정
+//    @Operation(
+//        summary = "이벤트 신청 단건 조회",
+//        description = "이벤트 신청 단건을 조회합니다.",
+//    )
+//    @GetMapping("/{registrationPublicId}")
+//    fun get(
+//        @PathVariable eventId: Long,
+//        @PathVariable registrationPublicId: String,
+//        @LoggedInUser user: User,
+//    ): ResponseEntity<RegistrationDto> {
+//        val userId = requireNotNull(user.id) { "로그인 사용자 ID가 없습니다." }
+//        return ResponseEntity.ok(registrationService.getByPublicId(eventId, registrationPublicId, userId))
+//    }
+//
 //    @Operation(
 //        summary = "이벤트 신청 취소",
 //        description = "취소 토큰을 이용해 신청을 취소합니다. 토큰은 24시간 내 만료되며, 취소 후 대기자가 자동 승격될 수 있습니다.",
 //    )
-//    @PostMapping("/{registrationId}/cancel")
+//    @PostMapping("/{registrationPublicId}/cancel")
 //    fun cancel(
 //        @PathVariable eventId: Long,
-//        @PathVariable registrationId: Long,
+//        @PathVariable registrationPublicId: String,
 //        @RequestParam token: String,
 //    ): ResponseEntity<Unit> {
-//        registrationService.cancelWithToken(registrationId, token)
+//        registrationService.cancelWithTokenByPublicId(eventId, registrationPublicId, token)
 //        return ResponseEntity.ok().build()
 //    }
 }

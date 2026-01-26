@@ -16,8 +16,8 @@ data class RegistrationGuestsResponse(
 ) {
     @Schema(description = "참여자 정보")
     data class Guest(
-        @Schema(description = "신청 ID")
-        val id: Long,
+        @Schema(description = "신청 공개 ID")
+        val registrationPublicId: String,
         @Schema(description = "이름")
         val name: String,
         @Schema(description = "이메일 (관리자 요청 시 노출)")
