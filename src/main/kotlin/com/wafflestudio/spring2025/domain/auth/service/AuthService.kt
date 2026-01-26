@@ -1,11 +1,11 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
+import com.wafflestudio.spring2025.domain.auth.AuthenticateException
 import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
-import com.wafflestudio.spring2025.domain.auth.exception.AuthenticateException
-import com.wafflestudio.spring2025.domain.auth.exception.SignUpBadEmailException
-import com.wafflestudio.spring2025.domain.auth.exception.SignUpBadNameException
-import com.wafflestudio.spring2025.domain.auth.exception.SignUpBadPasswordException
-import com.wafflestudio.spring2025.domain.user.EmailAlreadyExistsException
+import com.wafflestudio.spring2025.domain.auth.SignUpBadEmailException
+import com.wafflestudio.spring2025.domain.auth.SignUpBadNameException
+import com.wafflestudio.spring2025.domain.auth.SignUpBadPasswordException
+import com.wafflestudio.spring2025.domain.auth.SignUpEmailConflictException
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
@@ -35,7 +35,7 @@ class AuthService(
         validatePassword(password)
 
         if (userRepository.existsByEmail(email)) {
-            throw EmailAlreadyExistsException()
+            throw SignUpEmailConflictException()
         }
 
         val user: User =
@@ -88,10 +88,9 @@ class AuthService(
         return accessToken
     }
 
-    fun logout(
-        user: User,
-        token: String,
-    ) {
-        TODO("로그아웃 도메인 로직 구현")
+    fun logout(token: String?) {
+        if (token != null) {
+            jwtBlacklistService.addToBlacklist(token)
+        }
     }
 }

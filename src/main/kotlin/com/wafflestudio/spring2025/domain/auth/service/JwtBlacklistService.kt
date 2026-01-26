@@ -1,21 +1,35 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
-import org.springframework.beans.factory.annotation.Value
+import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
+import java.util.concurrent.TimeUnit
 
 @Service
 class JwtBlacklistService(
+    private val jwtTokenProvider: JwtTokenProvider,
     private val redisTemplate: RedisTemplate<String, String>,
-    @Value("\${jwt.expiration-in-ms}")
-    private val expirationInMs: Long,
 ) {
     fun addToBlacklist(token: String) {
-        TODO("JWT 블랙리스트 등록 구현")
+        val jti = jwtTokenProvider.getJti(token) ?: return
+
+        val expiration = jwtTokenProvider.getExpiration(token).time
+        val now = System.currentTimeMillis()
+        val ttl = expiration - now
+
+        if (ttl <= 0) {
+            return
+        }
+
+        redisTemplate
+            .opsForValue()
+            .set("$BLACKLIST_PREFIX$jti", "1", ttl, TimeUnit.MILLISECONDS)
     }
 
     fun isBlacklisted(token: String): Boolean {
-        TODO("JWT 블랙리스트 조회 구현")
+        val jti = jwtTokenProvider.getJti(token) ?: return false
+        redisTemplate.opsForValue().get("$BLACKLIST_PREFIX$jti") ?: return false
+        return true
     }
 
     companion object {

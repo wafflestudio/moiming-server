@@ -27,13 +27,18 @@ class EmailService(
             loadTemplate("email-verification.html")
                 .replace("{verificationUrl}", verificationUrl)
 
-        emailClient.sendEmail(
-            to = toEmail,
-            subject = "모이샤 이메일 인증",
-            htmlContent = htmlContent,
-            fromEmail = emailConfig.fromEmail,
-            fromName = emailConfig.fromName,
-        )
+        try {
+            emailClient.sendEmail(
+                to = toEmail,
+                subject = "모이샤 이메일 인증",
+                htmlContent = htmlContent,
+                fromEmail = emailConfig.fromEmail,
+                fromName = emailConfig.fromName,
+            )
+        } catch (e: Exception) {
+            // throw EmailServiceUnavailableException()
+            throw e
+        }
 
         logger.info("Verification email sent to: $toEmail")
     }

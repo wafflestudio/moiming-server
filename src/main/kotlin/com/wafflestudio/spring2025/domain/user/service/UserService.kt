@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.user.service
 
+import com.wafflestudio.spring2025.domain.auth.AuthenticateException
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
 import com.wafflestudio.spring2025.domain.user.model.User
@@ -12,6 +13,9 @@ class UserService(
     private val userRepository: UserRepository,
 ) {
     fun me(
-        @Parameter(hidden = true) @LoggedInUser user: User,
-    ): UserDto = UserDto(user = user)
+        @Parameter(hidden = true) @LoggedInUser user: User?,
+    ): UserDto {
+        if (user == null) throw AuthenticateException()
+        return UserDto(user = user)
+    }
 }

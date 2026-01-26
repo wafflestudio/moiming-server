@@ -1,6 +1,7 @@
 package com.wafflestudio.spring2025.common.email.client
 
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
@@ -8,6 +9,7 @@ import org.springframework.web.reactive.function.client.bodyToMono
 @Component
 class SendGridEmailClient(
     private val webClient: WebClient,
+    @Value("\${sendgrid.api-key}") private val apiKey: String,
 ) : EmailClient {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -25,10 +27,6 @@ class SendGridEmailClient(
         val requestBody = buildSendGridRequest(to, subject, htmlContent, fromEmail, fromName)
 
         try {
-            val apiKey =
-                System.getenv("SENDGRID_API_KEY")
-                    ?: throw IllegalStateException("SENDGRID_API_KEY environment variable not set")
-
             webClient
                 .post()
                 .uri(SENDGRID_API_URL)

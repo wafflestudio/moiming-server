@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -32,21 +31,6 @@ class UserController(
     )
     @GetMapping("/me")
     fun me(
-        @Parameter(hidden = true) @LoggedInUser user: User,
+        @Parameter(hidden = true) @LoggedInUser user: User?,
     ): ResponseEntity<GetMeResponse> = ResponseEntity.ok(userService.me(user))
-
-    @Operation(summary = "로그아웃", description = "현재 JWT 토큰을 무효화합니다")
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "로그아웃 성공"),
-            ApiResponse(responseCode = "401", description = "인증 실패"),
-        ],
-    )
-    @PostMapping("/logout")
-    fun logout(
-        @Parameter(hidden = true) @LoggedInUser user: User,
-        @Parameter(hidden = true) @org.springframework.web.bind.annotation.RequestHeader("Authorization") authorization: String,
-    ): ResponseEntity<Unit> {
-        TODO("로그아웃 API 구현")
-    }
 }

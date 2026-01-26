@@ -52,6 +52,15 @@ class JwtTokenProvider(
             .body
             .id
 
+    fun getExpiration(token: String): Date =
+        Jwts
+            .parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .body
+            .expiration
+
     fun validateToken(token: String): Boolean {
         try {
             Jwts

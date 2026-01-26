@@ -18,6 +18,9 @@ jwt:
 email:
   from-name: 모이샤
 
+sendgrid:
+  api-key: ${SENDGRID_API_KEY}
+
 logging:
   level:
     org:

@@ -1,9 +1,8 @@
-package com.wafflestudio.spring2025.domain.user.service
+package com.wafflestudio.spring2025.domain.auth.service
 
 import com.wafflestudio.spring2025.common.email.service.EmailService
-import com.wafflestudio.spring2025.domain.user.EmailAlreadyExistsException
-import com.wafflestudio.spring2025.domain.user.InvalidVerificationCodeException
-import com.wafflestudio.spring2025.domain.user.VerificationCodeExpiredException
+import com.wafflestudio.spring2025.domain.auth.InvalidVerificationCodeException
+import com.wafflestudio.spring2025.domain.auth.SignUpEmailConflictException
 import com.wafflestudio.spring2025.domain.user.model.PendingUser
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.PendingUserRepository
@@ -27,7 +26,7 @@ class EmailVerificationService(
      * @param email 사용자 이메일 주소
      * @param name 사용자 이름
      * @param passwordHash 해시된 비밀번호
-     * @throws EmailAlreadyExistsException 이메일이 users 또는 pending_users에 이미 존재하는 경우
+     * @throws SignUpEmailConflictException 이메일이 users 또는 pending_users에 이미 존재하는 경우
      */
     fun createPendingUser(
         email: String,
@@ -36,11 +35,14 @@ class EmailVerificationService(
     ) {
         // Check if email already exists in users or pending_users
         if (userRepository.existsByEmail(email) || pendingUserRepository.existsByEmail(email)) {
-            throw EmailAlreadyExistsException()
+            throw SignUpEmailConflictException()
         }
 
         // Generate verification code
         val verificationCode = generateVerificationCode()
+
+        // Send verification email
+        emailService.sendVerificationEmail(email, verificationCode)
 
         // Calculate expiration time
         val expiresAt = Instant.now().plusSeconds(VERIFICATION_CODE_EXPIRATION_HOURS * 3600)
@@ -56,17 +58,13 @@ class EmailVerificationService(
             )
 
         pendingUserRepository.save(pendingUser)
-
-        // Send verification email
-        emailService.sendVerificationEmail(email, verificationCode)
     }
 
     /**
      * Verifies the verification code and creates a verified user
      * @param code Verification code from email
      * @return Created User
-     * @throws InvalidVerificationCodeException if code is invalid
-     * @throws VerificationCodeExpiredException if code has expired
+     * @throws InvalidVerificationCodeException if code is invalid or expired
      */
     fun verifyEmailAndCreateUser(code: String): User {
         // Find pending user by verification code
@@ -77,7 +75,7 @@ class EmailVerificationService(
         // Check if code has expired
         if (Instant.now().isAfter(pendingUser.expiresAt)) {
             pendingUserRepository.delete(pendingUser)
-            throw VerificationCodeExpiredException()
+            throw InvalidVerificationCodeException()
         }
 
         // Create actual user
