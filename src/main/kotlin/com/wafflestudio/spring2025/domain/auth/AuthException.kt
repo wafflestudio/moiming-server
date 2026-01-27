@@ -35,7 +35,7 @@ class SignUpBadNameException :
 
 class AuthenticateException :
     AuthException(
-        errorCode = 0,
+        errorCode = 1000,
         httpStatusCode = HttpStatus.UNAUTHORIZED,
         msg = "Authenticate failed",
     )
