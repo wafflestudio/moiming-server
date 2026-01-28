@@ -14,6 +14,7 @@ import com.wafflestudio.spring2025.domain.registration.RegistrationWrongNameExce
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse.Guest
+import com.wafflestudio.spring2025.domain.registration.dto.RegistrationStatusResponse
 import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationDto
 import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationWithEventDto
 import com.wafflestudio.spring2025.domain.registration.model.Registration
@@ -112,12 +113,29 @@ class RegistrationService(
             if (saved.status == RegistrationStatus.WAITING) {
                 registrationRepository
                     .countByEventIdAndStatus(eventId, RegistrationStatus.WAITING)
-                    .toString()
+                    .toInt()
             } else {
                 null
             }
-        return CreateRegistrationResponse(waitingNum)
+        val confirmEmail =
+            if (userId == null) {
+                guestEmail
+            } else {
+                userRepository.findById(userId).orElse(null)?.email
+            }
+        return CreateRegistrationResponse(
+            status = toResponseStatus(saved.status),
+            waitingNum = waitingNum,
+            confirmEmail = confirmEmail,
+        )
     }
+
+    private fun toResponseStatus(status: RegistrationStatus): RegistrationStatusResponse =
+        when (status) {
+            RegistrationStatus.CONFIRMED -> RegistrationStatusResponse.CONFIRMED
+            RegistrationStatus.WAITING -> RegistrationStatusResponse.WAITING
+            RegistrationStatus.CANCELED -> RegistrationStatusResponse.CANCELLED
+        }
 
     fun getGuestsByEventId(
         eventId: Long,
