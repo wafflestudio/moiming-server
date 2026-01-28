@@ -241,7 +241,7 @@ class RegistrationService(
                     throw RegistrationInvalidStatusException()
                 }
                 if (registration.status == RegistrationStatus.CANCELED) {
-                    throw RegistrationAlreadyCanceledException()
+                    break
                 }
                 registration.status = RegistrationStatus.CANCELED
                 registrationRepository.save(registration)
@@ -270,7 +270,8 @@ class RegistrationService(
                 .findById(registrationId)
                 .orElseThrow { RegistrationNotFoundException() }
         if (registration.status == RegistrationStatus.CANCELED) {
-            throw RegistrationAlreadyCanceledException()
+            registrationTokenRepository.delete(registrationToken)
+            return
         }
         if (registration.status == RegistrationStatus.CONFIRMED) {
             return
