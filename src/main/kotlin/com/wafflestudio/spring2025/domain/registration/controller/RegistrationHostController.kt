@@ -28,9 +28,7 @@ class RegistrationHostController(
         @LoggedInUser user: User,
     ): ResponseEntity<PatchRegistrationResponse> {
         val userId = user.id ?: throw UserIdentityNotFoundException()
-        val status =
-            request.status?.toRegistrationStatus()
-                ?: throw RegistrationInvalidStatusException()
+        val status = request.status ?: throw RegistrationInvalidStatusException()
         val response = registrationService.updateStatusByHost(userId, registrationId, status)
 
         return ResponseEntity.ok(response)

@@ -5,21 +5,5 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "이벤트 신청 상태 변경 요청")
 data class UpdateRegistrationStatusRequest(
-    val status: RegistrationPatchStatus? = null,
+    val status: RegistrationStatus? = null,
 )
-
-enum class RegistrationPatchStatus {
-    CONFIRMED,
-    WAITING,
-    CANCELLED,
-    BANNED,
-    ;
-
-    fun toRegistrationStatus(): RegistrationStatus =
-        when (this) {
-            CANCELLED -> RegistrationStatus.CANCELED
-            CONFIRMED -> RegistrationStatus.CONFIRMED
-            WAITING -> RegistrationStatus.WAITING
-            BANNED -> RegistrationStatus.BANNED
-        }
-}
