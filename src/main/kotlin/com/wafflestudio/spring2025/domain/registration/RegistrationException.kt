@@ -13,56 +13,56 @@ sealed class RegistrationException(
 
 class RegistrationNotFoundException :
     RegistrationException(
-        errorCode = 0,
+        errorCode = 3000,
         httpStatusCode = HttpStatus.NOT_FOUND,
         msg = "Registration not found",
     )
 
 class RegistrationAlreadyExistsException :
     RegistrationException(
-        errorCode = 1001,
+        errorCode = 3001,
         httpStatusCode = HttpStatus.CONFLICT,
         msg = "Registration already exists",
     )
 
 class RegistrationUnauthorizedException :
     RegistrationException(
-        errorCode = 0,
+        errorCode = 3002,
         httpStatusCode = HttpStatus.FORBIDDEN,
         msg = "Not authorized to manage registrations",
     )
 
 class RegistrationWrongNameException :
     RegistrationException(
-        errorCode = 1002,
+        errorCode = 3003,
         httpStatusCode = HttpStatus.BAD_REQUEST,
         msg = "Wrong guest name",
     )
 
 class RegistrationWrongEmailException :
     RegistrationException(
-        errorCode = 1003,
+        errorCode = 3004,
         httpStatusCode = HttpStatus.BAD_REQUEST,
         msg = "Wrong guest email",
     )
 
 class RegistrationInvalidStatusException :
     RegistrationException(
-        errorCode = 1004,
+        errorCode = 3005,
         httpStatusCode = HttpStatus.BAD_REQUEST,
         msg = "Invalid registration status",
     )
 
 class RegistrationInvalidTokenException :
     RegistrationException(
-        errorCode = 0,
+        errorCode = 3006,
         httpStatusCode = HttpStatus.FORBIDDEN,
         msg = "Invalid registration token",
     )
 
 class RegistrationAlreadyCanceledException :
     RegistrationException(
-        errorCode = 0,
+        errorCode = 3007,
         httpStatusCode = HttpStatus.CONFLICT,
         msg = "Registration already canceled",
     )
