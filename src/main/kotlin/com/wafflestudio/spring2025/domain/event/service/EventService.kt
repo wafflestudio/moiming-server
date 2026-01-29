@@ -2,6 +2,7 @@ package com.wafflestudio.spring2025.domain.event.service
 
 import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.GuestPreview
+import com.wafflestudio.spring2025.domain.event.dto.response.MyEventsInfiniteResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.MyRole
 import com.wafflestudio.spring2025.domain.event.exception.EventErrorCode
 import com.wafflestudio.spring2025.domain.event.exception.EventForbiddenException
@@ -15,6 +16,9 @@ import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
+import com.wafflestudio.spring2025.domain.event.dto.response.MyEventResponse
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 
 @Service
 class EventService(
@@ -24,7 +28,7 @@ class EventService(
 ) {
     /**
      * 일정 생성
-     * - API 설계상 body를 비우고 201 + Location을 주기 위해 생성된 publicId를 반환
+     * API 설계상 body를 비우고 201 + Location을 주기 위해 생성된 publicId를 반환
      */
     fun create(
         title: String,
@@ -68,7 +72,7 @@ class EventService(
 
     /**
      * 일정 상세 조회
-     * - registrations 도메인 붙기 전: participants/waiting/guests는 기본값으로 내려줌
+     * registrations 도메인 붙기 전: participants/waiting/guests는 기본값으로 내려줌
      */
     fun getDetail(
         publicId: String,
@@ -157,6 +161,82 @@ class EventService(
             guestsPreview = guestsPreview,
         )
     }
+    /**
+     * 내가 만든 일정 조회
+     * 처음에는 cursor가 null, 그 이후에는 이전 Response에서 받은 cursor로 목록 조회
+     */
+    fun getMyEventsInfinite(
+        createdBy: Long,
+        cursor: Instant?,
+        size: Int,
+    ): MyEventsInfiniteResponse {
+        val pageSize = size.coerceAtLeast(1)
+        val pageable =
+            PageRequest.of(
+                0,
+                pageSize + 1, // +1로 hasNext 판단
+                Sort.by(Sort.Direction.DESC, "createdAt"),
+            )
+
+        val fetched: List<Event> =
+            if (cursor == null) {
+                eventRepository.findByCreatedByAndCreatedAtIsNotNullOrderByCreatedAtDesc(createdBy, pageable)
+            } else {
+                eventRepository.findByCreatedByAndCreatedAtIsNotNullAndCreatedAtLessThanOrderByCreatedAtDesc(
+                    createdBy = createdBy,
+                    cursor = cursor,
+                    pageable = pageable,
+                )
+            }
+
+        val hasNext = fetched.size > pageSize
+        val sliced = fetched.take(pageSize)
+
+        val nextCursor = sliced.lastOrNull()?.createdAt
+
+        // registrationCnt = HOST + CONFIRMED + WAITING 합
+        // (동작 우선 N+1 방식; 나중에 group-by로 최적화 가능)
+        val responses =
+            sliced.map { event ->
+                val eventId = requireNotNull(event.id) { "Event id is null: publicId=${event.publicId}" }
+
+                val hostCnt =
+                    registrationRepository.countByEventIdAndStatus(
+                        eventID = eventId,
+                        registrationStatus = RegistrationStatus.HOST,
+                    ).toInt()
+
+                val confirmedCnt =
+                    registrationRepository.countByEventIdAndStatus(
+                        eventID = eventId,
+                        registrationStatus = RegistrationStatus.CONFIRMED,
+                    ).toInt()
+
+                val waitingCnt =
+                    registrationRepository.countByEventIdAndStatus(
+                        eventID = eventId,
+                        registrationStatus = RegistrationStatus.WAITING,
+                    ).toInt()
+
+                MyEventResponse(
+                    publicId = event.publicId,
+                    title = event.title,
+                    startAt = event.startAt,
+                    endAt = event.endAt,
+                    registrationStart = event.registrationStart,
+                    registrationDeadline = event.registrationDeadline,
+                    capacity = event.capacity,
+                    registrationCnt = hostCnt + confirmedCnt + waitingCnt,
+                )
+            }
+
+        return MyEventsInfiniteResponse(
+            events = responses,
+            nextCursor = if (hasNext) nextCursor else null,
+            hasNext = hasNext,
+        )
+    }
+
 
     fun update(
         publicId: String,
