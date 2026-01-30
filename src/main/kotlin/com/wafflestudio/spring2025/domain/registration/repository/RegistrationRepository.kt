@@ -18,6 +18,11 @@ interface RegistrationRepository : ListCrudRepository<Registration, Long> {
         eventId: Long,
     ): Registration?
 
+    fun findByGuestEmailAndEventId(
+        guestEmail: String,
+        eventId: Long,
+    ): Registration?
+
     fun existsByUserIdAndEventId(
         userId: Long,
         eventId: Long,

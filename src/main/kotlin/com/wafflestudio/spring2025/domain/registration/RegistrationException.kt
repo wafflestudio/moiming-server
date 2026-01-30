@@ -66,3 +66,10 @@ class RegistrationAlreadyCanceledException :
         httpStatusCode = HttpStatus.CONFLICT,
         msg = "Registration already canceled",
     )
+
+class RegistrationAlreadyBannedException :
+    RegistrationException(
+        errorCode = 3008,
+        httpStatusCode = HttpStatus.CONFLICT,
+        msg = "Registration already banned",
+    )

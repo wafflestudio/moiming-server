@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/registrations")
-@Tag(name = "Registration", description = "이벤트 신청 조회 API")
-class RegistrationMyController(
+@Tag(name = "Registration", description = "내 신청 조회 API")
+class MyRegistrationController(
     private val registrationService: RegistrationService,
 ) {
     @Operation(
