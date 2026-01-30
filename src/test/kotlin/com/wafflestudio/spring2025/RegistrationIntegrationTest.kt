@@ -10,6 +10,7 @@ import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRe
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationTokenRepository
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -18,7 +19,6 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.core.MethodParameter
 import org.springframework.core.annotation.Order
 import org.springframework.http.MediaType
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -31,8 +31,6 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.testcontainers.junit.jupiter.Testcontainers
-import java.sql.Timestamp
-import java.time.Duration
 import java.time.Instant
 
 @SpringBootTest
@@ -48,10 +46,9 @@ class RegistrationIntegrationTest
         private val eventRepository: EventRepository,
         private val registrationRepository: RegistrationRepository,
         private val registrationTokenRepository: RegistrationTokenRepository,
-        private val jdbcTemplate: JdbcTemplate,
     ) {
         @Test
-        fun `이벤트 신청 시 취소 토큰을 발급한다`() {
+        fun `이벤트 신청 시 상태와 이메일을 반환하고 취소 토큰을 저장한다`() {
             val (user, _) = dataGenerator.generateUser()
             val event = createEvent(createdBy = user.id!!, title = "Event 1")
 
@@ -63,46 +60,13 @@ class RegistrationIntegrationTest
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(
                     status().isOk,
-                ).andExpect(jsonPath("$.registration.eventId").value(event.id))
-                .andExpect(jsonPath("$.registration.status").value("CONFIRMED"))
-                .andExpect(jsonPath("$.cancelToken").isNotEmpty)
+                ).andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.waitingNum").value(nullValue()))
+                .andExpect(jsonPath("$.confirmEmail").value("guest@example.com"))
 
             val saved = registrationRepository.findByEventId(event.id!!).first()
             val tokens = registrationTokenRepository.findByRegistrationId(saved.id!!)
             assertThat(tokens).hasSize(1)
-        }
-
-        @Test
-        fun `취소 토큰으로 신청을 취소한다`() {
-            val (user, _) = dataGenerator.generateUser()
-            val event = createEvent(createdBy = user.id!!, title = "Event 2")
-
-            val request = CreateRegistrationRequest(guestName = "guest", guestEmail = "guest2@example.com")
-            val createResult =
-                mvc
-                    .perform(
-                        post("/api/v1/events/${event.id}/registrations")
-                            .content(mapper.writeValueAsString(request))
-                            .contentType(MediaType.APPLICATION_JSON),
-                    ).andExpect(status().isOk)
-                    .andReturn()
-
-            val response =
-                mapper.readValue(
-                    createResult.response.contentAsString,
-                    CreateRegistrationResponse::class.java,
-                )
-
-            mvc
-                .perform(
-                    post("/api/v1/events/${event.id}/registrations/${response.registration.id}/cancel")
-                        .queryParam("token", response.cancelToken)
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isOk)
-
-            val canceled = registrationRepository.findById(response.registration.id).orElseThrow()
-            assertThat(canceled.status.name).isEqualTo("CANCELED")
-            assertThat(registrationTokenRepository.findByRegistrationId(canceled.id!!)).isEmpty()
         }
 
         @Test
@@ -144,60 +108,17 @@ class RegistrationIntegrationTest
         }
 
         @Test
-        fun `만료된 취소 토큰은 거절된다`() {
-            val (user, _) = dataGenerator.generateUser()
-            val event = createEvent(createdBy = user.id!!, title = "Event 3")
-
-            val request = CreateRegistrationRequest(guestName = "guest", guestEmail = "guest3@example.com")
-            val createResult =
-                mvc
-                    .perform(
-                        post("/api/v1/events/${event.id}/registrations")
-                            .content(mapper.writeValueAsString(request))
-                            .contentType(MediaType.APPLICATION_JSON),
-                    ).andExpect(status().isOk)
-                    .andReturn()
-
-            val response =
-                mapper.readValue(
-                    createResult.response.contentAsString,
-                    CreateRegistrationResponse::class.java,
-                )
-
-            val expiredAt = Instant.now().minus(Duration.ofHours(25))
-            jdbcTemplate.update(
-                "UPDATE registration_tokens SET created_at = ? WHERE registration_id = ?",
-                Timestamp.from(expiredAt),
-                response.registration.id,
-            )
-
-            mvc
-                .perform(
-                    post("/api/v1/events/${event.id}/registrations/${response.registration.id}/cancel")
-                        .queryParam("token", response.cancelToken)
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isForbidden)
-
-            val current = registrationRepository.findById(response.registration.id).orElseThrow()
-            assertThat(current.status.name).isNotEqualTo("CANCELED")
-        }
-
-        @Test
-        fun `확정 취소 시 대기자가 자동 승격된다`() {
+        fun `대기 신청 시 상태와 대기 순번을 반환한다`() {
             val (user, _) = dataGenerator.generateUser()
             val event = createEvent(createdBy = user.id!!, title = "Event 4", capacity = 1, waitlistEnabled = true)
 
             val request1 = CreateRegistrationRequest(guestName = "guest1", guestEmail = "guest4a@example.com")
-            val create1 =
-                mvc
-                    .perform(
-                        post("/api/v1/events/${event.id}/registrations")
-                            .content(mapper.writeValueAsString(request1))
-                            .contentType(MediaType.APPLICATION_JSON),
-                    ).andExpect(status().isOk)
-                    .andReturn()
-
-            Thread.sleep(5)
+            mvc
+                .perform(
+                    post("/api/v1/events/${event.id}/registrations")
+                        .content(mapper.writeValueAsString(request1))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
 
             val request2 = CreateRegistrationRequest(guestName = "guest2", guestEmail = "guest4b@example.com")
             val create2 =
@@ -209,31 +130,15 @@ class RegistrationIntegrationTest
                     ).andExpect(status().isOk)
                     .andReturn()
 
-            val response1 =
-                mapper.readValue(
-                    create1.response.contentAsString,
-                    CreateRegistrationResponse::class.java,
-                )
-
             val response2 =
                 mapper.readValue(
                     create2.response.contentAsString,
                     CreateRegistrationResponse::class.java,
                 )
 
-            mvc
-                .perform(
-                    post("/api/v1/events/${event.id}/registrations/${response1.registration.id}/cancel")
-                        .queryParam("token", response1.cancelToken)
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isOk)
-
-            val registrations = registrationRepository.findByEventId(event.id!!)
-            val first = registrations.first { it.id == response1.registration.id }
-            val second = registrations.first { it.id == response2.registration.id }
-
-            assertThat(first.status.name).isEqualTo("CANCELED")
-            assertThat(second.status.name).isEqualTo("CONFIRMED")
+            assertThat(response2.status.name).isEqualTo("WAITING")
+            assertThat(response2.waitingNum).isEqualTo(1)
+            assertThat(response2.confirmEmail).isEqualTo("guest4b@example.com")
         }
 
         private fun createEvent(

@@ -134,14 +134,20 @@ class RegistrationService(
                 waitingNum = waitingNum,
             )
         }
-        return CreateRegistrationResponse(waitingNum)
+        return CreateRegistrationResponse(
+            status = toResponseStatus(saved.status),
+            waitingNum = waitingNum,
+            confirmEmail = recipientEmail,
+        )
     }
 
     private fun toResponseStatus(status: RegistrationStatus): RegistrationStatusResponse =
         when (status) {
+            RegistrationStatus.HOST -> RegistrationStatusResponse.CONFIRMED
             RegistrationStatus.CONFIRMED -> RegistrationStatusResponse.CONFIRMED
             RegistrationStatus.WAITING -> RegistrationStatusResponse.WAITING
             RegistrationStatus.CANCELED -> RegistrationStatusResponse.CANCELLED
+            RegistrationStatus.BANNED -> RegistrationStatusResponse.BANNED
         }
 
     fun getGuestsByEventId(

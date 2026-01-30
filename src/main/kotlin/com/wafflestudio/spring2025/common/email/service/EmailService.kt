@@ -66,7 +66,7 @@ class EmailService(
         toEmail: String,
         eventTitle: String,
         status: RegistrationStatus,
-        waitingNum: String? = null,
+        waitingNum: Int? = null,
         // 신청 메일 템플릿이 확정됨에 따라 인자 수정 가능
     ) {
         when (status) {
@@ -89,7 +89,7 @@ class EmailService(
                 val htmlContent =
                     loadTemplate("registration-waitlisted.html")
                         .replace("{eventTitle}", eventTitle)
-                        .replace("{waitingNum}", waitingNum ?: "-")
+                        .replace("{waitingNum}", waitingNum?.toString() ?: "-")
 
                 emailClient.sendEmail(
                     to = toEmail,

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/events/{eventId}/registrations")
+@RequestMapping("/api/v1/events/{eventId}/registrations")
 @Tag(name = "Registration", description = "이벤트 신청 관리 API")
 class RegistrationController(
     private val registrationService: RegistrationService,
