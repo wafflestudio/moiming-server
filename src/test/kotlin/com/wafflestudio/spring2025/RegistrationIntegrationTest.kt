@@ -32,6 +32,7 @@ import org.springframework.web.method.support.ModelAndViewContainer
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Instant
+import java.util.UUID
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -149,6 +150,7 @@ class RegistrationIntegrationTest
         ): Event =
             eventRepository.save(
                 Event(
+                    publicId = UUID.randomUUID().toString(),
                     title = title,
                     description = null,
                     location = null,
