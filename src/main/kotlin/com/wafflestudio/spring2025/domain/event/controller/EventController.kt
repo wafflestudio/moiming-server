@@ -87,7 +87,6 @@ class EventController(
         return ResponseEntity.ok(response)
     }
 
-
     @Operation(summary = "이벤트 수정", description = "이벤트를 수정합니다")
     @PutMapping("/{publicId}") // PUT /api/events/{publicId}
     fun update(

@@ -16,5 +16,5 @@ data class MyEventResponse(
     val registrationStart: Instant?,
     val registrationDeadline: Instant?,
     val capacity: Int?,
-    val registrationCnt: Int,
+    val totalApplicants: Int,
 )
