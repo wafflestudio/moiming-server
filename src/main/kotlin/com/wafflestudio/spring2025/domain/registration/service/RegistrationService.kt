@@ -100,7 +100,7 @@ class RegistrationService(
                         RegistrationStatus.CONFIRMED,
                         RegistrationStatus.HOST,
                         RegistrationStatus.WAITING,
-                            -> throw RegistrationAlreadyExistsException()
+                        -> throw RegistrationAlreadyExistsException()
                     }
                 } else {
                     val registration =
@@ -309,7 +309,7 @@ class RegistrationService(
                 RegistrationStatus.CONFIRMED,
                 RegistrationStatus.HOST,
                 RegistrationStatus.WAITING,
-                    -> throw RegistrationInvalidStatusException()
+                -> throw RegistrationInvalidStatusException()
             }
 
             if (wasConfirmed) {
@@ -363,21 +363,21 @@ class RegistrationService(
         registrationTokenRepository.delete(registrationToken)
     }
 
-    private fun isRegistrationEnabled(
-        eventId: Long
-    ): Boolean {
-        val event = eventRepository
-            .findById(eventId)
-            .orElseThrow{ EventNotFoundException() }
+    private fun isRegistrationEnabled(eventId: Long): Boolean {
+        val event =
+            eventRepository
+                .findById(eventId)
+                .orElseThrow { EventNotFoundException() }
 
         val registrationStartsAt = event.registrationStart
         val registrationEndsAt = event.registrationDeadline
         val now = Instant.now()
 
-        if (now.isBefore(registrationEndsAt) and now.isAfter(registrationStartsAt)){
+        if (now.isBefore(registrationEndsAt) and now.isAfter(registrationStartsAt)) {
             return true
+        } else {
+            return false
         }
-        else return false
     }
 
     private fun hashToken(token: String): String {
