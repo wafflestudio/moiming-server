@@ -4,6 +4,21 @@ spring:
     username: user
     password: somepassword
     driver-class-name: com.mysql.cj.jdbc.Driver
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   flyway:
     enabled: true
   data:
@@ -17,9 +32,6 @@ jwt:
 
 email:
   from-name: 모이샤
-
-sendgrid:
-  api-key: ${SENDGRID_API_KEY}
 
 logging:
   level:
