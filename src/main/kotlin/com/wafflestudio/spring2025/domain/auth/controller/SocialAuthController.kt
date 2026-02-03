@@ -25,7 +25,7 @@ class SocialAuthController(
             ApiResponse(responseCode = "401", description = "인증 실패"),
         ],
     )
-    @PostMapping("/social")
+    @PostMapping
     suspend fun social(
         @RequestBody socialLoginRequest: SocialLoginRequest,
     ): ResponseEntity<LoginResponse> {

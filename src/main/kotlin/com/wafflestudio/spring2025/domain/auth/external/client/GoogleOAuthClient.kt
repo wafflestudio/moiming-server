@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.awaitBody
+import org.springframework.web.reactive.function.client.bodyToMono
 
 @Component
 class GoogleOAuthClient(
@@ -29,6 +31,7 @@ class GoogleOAuthClient(
     }
 
     override suspend fun exchangeToken(code: String): String {
+        logger.info("OAuth token exchange start: provider={}", provider)
         val body =
             LinkedMultiValueMap<String, String>().apply {
                 add("grant_type", "authorization_code")
@@ -46,15 +49,40 @@ class GoogleOAuthClient(
                     .bodyValue(body)
                     .retrieve()
                     .onStatus({ it.isError }) {
-                        throw AuthenticateException()
+                        it.bodyToMono<String>().map { errorBody ->
+                            logger.warn(
+                                "OAuth token exchange request failed: provider={}, status={}, errorBody={}",
+                                provider,
+                                it.statusCode().value(),
+                                errorBody,
+                            )
+                            AuthenticateException()
+                        }
                     }.awaitBody<TokenExchangeResponse>()
+            logger.info("OAuth token exchange success: provider={}", provider)
             return response.accessToken
+        } catch (e: WebClientResponseException) {
+            // WebClient exception with status/body (body may include sensitive details; be careful)
+            logger.warn(
+                "OAuth token exchange WebClient error: provider={}, status={}, message={}",
+                provider,
+                e.statusCode.value(),
+                e.message,
+            )
+            throw AuthenticateException()
         } catch (e: Exception) {
+            logger.warn(
+                "OAuth token exchange unexpected error: provider={}, type={}, message={}",
+                provider,
+                e.javaClass.simpleName,
+                e.message,
+            )
             throw AuthenticateException()
         }
     }
 
     private suspend fun getUserProfileEmail(token: String): GoogleUserInfoResponse {
+        logger.info("getting user profile with provider = {}", provider)
         try {
             return webClient
                 .get()
@@ -62,7 +90,15 @@ class GoogleOAuthClient(
                 .header("Authorization", "Bearer $token")
                 .retrieve()
                 .onStatus({ it.isError }) {
-                    throw AuthenticateException()
+                    it.bodyToMono<String>().map { errorBody ->
+                        logger.warn(
+                            "OAuth userinfo request failed: provider={}, status={}, errorBody={}",
+                            provider,
+                            it.statusCode().value(),
+                            errorBody,
+                        )
+                        AuthenticateException()
+                    }
                 }.awaitBody<GoogleUserInfoResponse>()
         } catch (e: Exception) {
             throw AuthenticateException()
