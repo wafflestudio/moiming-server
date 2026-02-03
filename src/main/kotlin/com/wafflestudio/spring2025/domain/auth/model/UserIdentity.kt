@@ -13,7 +13,6 @@ class UserIdentity(
     @Column("user_id")
     var userId: Long,
     val provider: String,
-
     @CreatedDate
     @Column("created_at")
     var createdAt: Instant? = null,
