@@ -4,9 +4,9 @@ import com.wafflestudio.spring2025.common.email.client.EmailClient
 import com.wafflestudio.spring2025.config.EmailConfig
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import org.slf4j.LoggerFactory
+import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
 
 @Service
 class EmailService(
@@ -52,11 +52,8 @@ class EmailService(
      */
     private fun loadTemplate(templateName: String): String =
         try {
-            val path =
-                Paths.get(
-                    "src/main/kotlin/com/wafflestudio/spring2025/common/email/template/$templateName",
-                )
-            Files.readString(path)
+            val resource = ClassPathResource("com/wafflestudio/spring2025/common/email/template/$templateName")
+            resource.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
         } catch (e: Exception) {
             logger.error("Failed to load email template: $templateName", e)
             throw IllegalStateException("Email template not found: $templateName", e)

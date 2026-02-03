@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -35,15 +36,32 @@ jobs:
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          APP_DIR: ${{ secrets.EC2_APP_DIR }}
+          SPRING_MAIL_USERNAME: ${{ secrets.SPRING_MAIL_USERNAME }}
+          SPRING_MAIL_PASSWORD: ${{ secrets.SPRING_MAIL_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT }}
+          envs: APP_DIR,SPRING_MAIL_USERNAME,SPRING_MAIL_PASSWORD,DB_PASSWORD,MYSQL_ROOT_PASSWORD,JWT_SECRET,SENDGRID_API_KEY
           script: |
-            cd ~/app
+            set -euo pipefail
+            if [ -n "${APP_DIR:-}" ]; then
+              cd "$APP_DIR"
+            else
+              cd ~/app
+            fi
 
             # Create/update .env file with secrets
             cat > .env << EOF
+            SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
+            SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -71,12 +89,21 @@ jobs:
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          APP_DIR: ${{ secrets.EC2_APP_DIR }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT }}
+          envs: APP_DIR
           script: |
-            cd ~/app
+            set -euo pipefail
+            if [ -n "${APP_DIR:-}" ]; then
+              cd "$APP_DIR"
+            else
+              cd ~/app
+            fi
 
             echo "=== Waiting for app to be healthy ==="
             for i in {1..30}; do
