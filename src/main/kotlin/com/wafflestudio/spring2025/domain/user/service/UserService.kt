@@ -37,7 +37,6 @@ class UserService(
         )
     }
 
-
     fun updateProfileImage(
         user: User?,
         image: MultipartFile,
