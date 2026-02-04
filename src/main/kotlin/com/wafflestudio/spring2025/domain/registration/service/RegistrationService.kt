@@ -16,6 +16,8 @@ import com.wafflestudio.spring2025.domain.registration.RegistrationUnauthorizedE
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongEmailException
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongNameException
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.EventRegistrationItem
+import com.wafflestudio.spring2025.domain.registration.dto.GetEventRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.GetMyRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.GetRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.MyRegistrationItem
@@ -339,6 +341,113 @@ class RegistrationService(
             throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
     }
+
+    fun getEventRegistration(
+        eventId: Long,
+        requesterId: Long,
+        status: String?,
+        orderBy: String?,
+        cursor: Int?,
+    ): GetEventRegistrationsResponse {
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+        val isAdmin = event.createdBy == requesterId
+
+        val statusFilter = parseStatusFilter(status)
+        val order = parseOrderBy(orderBy)
+
+        val registrations = registrationRepository.findByEventId(eventId)
+        val filtered =
+            statusFilter?.let { filter ->
+                registrations.filter { it.status == filter }
+            } ?: registrations
+
+        val waitings =
+            registrations
+                .filter { it.status == RegistrationStatus.WAITLISTED }
+                .sortedBy { it.createdAt }
+        val waitingIndexById =
+            waitings
+                .mapIndexedNotNull { idx, reg -> reg.id?.let { id -> id to (idx + 1) } }
+                .toMap()
+
+        val userIds = filtered.mapNotNull { it.userId }.distinct()
+        val usersById =
+            if (userIds.isEmpty()) {
+                emptyMap()
+            } else {
+                userRepository.findAllById(userIds).associateBy { it.id!! }
+            }
+
+        val items =
+            filtered.map { registration ->
+                val user = registration.userId?.let { usersById[it] }
+                val waitingNum =
+                    if (registration.status == RegistrationStatus.WAITLISTED) {
+                        registration.id?.let { waitingIndexById[it] }
+                    } else {
+                        null
+                    }
+                val profileImage = user?.profileImage
+                val item =
+                    EventRegistrationItem(
+                        registration = registration,
+                        profileImage = profileImage,
+                        user = user,
+                        waitingNum = waitingNum,
+                    )
+                if (isAdmin) item else item.copy(email = null)
+            }
+
+        val sorted =
+            when (order) {
+                RegistrationOrderBy.NAME ->
+                    items.sortedWith(compareBy<EventRegistrationItem> { it.name.lowercase() }.thenBy { it.registrationId })
+                RegistrationOrderBy.REGISTERED_AT ->
+                    items.sortedWith(compareBy<EventRegistrationItem> { it.createdAt }.thenBy { it.registrationId })
+            }
+
+        val pageSize = 10
+        val safeCursor = cursor ?: -1
+        val startIndex = (safeCursor + 1).coerceAtLeast(0)
+        val page =
+            if (startIndex >= sorted.size) {
+                emptyList()
+            } else {
+                sorted.drop(startIndex).take(pageSize)
+            }
+        val lastIndex = startIndex + page.size - 1
+        val hasNext = (startIndex + page.size) < sorted.size
+        val nextCursor = if (hasNext && page.isNotEmpty()) lastIndex else null
+
+        return GetEventRegistrationsResponse(
+            participants = page,
+            nextCursor = nextCursor,
+            hasNext = hasNext,
+        )
+    }
+
+    private enum class RegistrationOrderBy {
+        NAME,
+        REGISTERED_AT,
+    }
+
+    private fun parseStatusFilter(status: String?): RegistrationStatus? =
+        when (status?.lowercase()) {
+            null -> null
+            "confirmed" -> RegistrationStatus.CONFIRMED
+            "waiting" -> RegistrationStatus.WAITLISTED
+            "waitlisted" -> RegistrationStatus.WAITLISTED
+            "canceled" -> RegistrationStatus.CANCELED
+            "banned" -> RegistrationStatus.BANNED
+            else -> throw RegistrationInvalidStatusException()
+        }
+
+    private fun parseOrderBy(orderBy: String?): RegistrationOrderBy =
+        when (orderBy?.lowercase()) {
+            null, "registeredat" -> RegistrationOrderBy.REGISTERED_AT
+            "name" -> RegistrationOrderBy.NAME
+            else -> RegistrationOrderBy.REGISTERED_AT
+        }
 
     fun cancelWithToken(
         registrationId: Long,
