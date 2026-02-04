@@ -1,13 +1,10 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
 import com.wafflestudio.spring2025.domain.auth.AuthenticateException
-import com.wafflestudio.spring2025.domain.auth.GoogleAccountAlreadyExistsException
 import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
 import com.wafflestudio.spring2025.domain.auth.SignUpBadEmailException
 import com.wafflestudio.spring2025.domain.auth.SignUpBadNameException
 import com.wafflestudio.spring2025.domain.auth.SignUpBadPasswordException
-import com.wafflestudio.spring2025.domain.auth.EmailAccountAlreadyExistsException
-import com.wafflestudio.spring2025.domain.auth.model.SocialProvider
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
 import com.wafflestudio.spring2025.domain.user.identity.repository.UserIdentityRepository
 import com.wafflestudio.spring2025.domain.user.model.User
@@ -39,7 +36,6 @@ class AuthService(
             jwtBlacklistService.addToBlacklist(token)
         }
     }
-
 
     fun signup(
         email: String,

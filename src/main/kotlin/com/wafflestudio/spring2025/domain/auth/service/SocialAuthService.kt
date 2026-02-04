@@ -1,7 +1,7 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
-import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
 import com.wafflestudio.spring2025.domain.auth.EmailAccountAlreadyExistsException
+import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
 import com.wafflestudio.spring2025.domain.auth.dto.LoginResponse
 import com.wafflestudio.spring2025.domain.auth.external.client.OAuthClientRegistry
 import com.wafflestudio.spring2025.domain.auth.external.dto.OAuthUserInfo
@@ -22,7 +22,6 @@ class SocialAuthService(
     private val jwtTokenProvider: JwtTokenProvider,
 ) {
     private fun socialRegister(userInfo: OAuthUserInfo): UserIdentity {
-
         if (userRepository.existsByEmail(userInfo.email)) {
             throw EmailAccountAlreadyExistsException()
         }

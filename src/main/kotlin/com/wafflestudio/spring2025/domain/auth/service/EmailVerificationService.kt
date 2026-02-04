@@ -1,9 +1,9 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
 import com.wafflestudio.spring2025.common.email.service.EmailService
-import com.wafflestudio.spring2025.domain.auth.InvalidVerificationCodeException
 import com.wafflestudio.spring2025.domain.auth.EmailAccountAlreadyExistsException
 import com.wafflestudio.spring2025.domain.auth.GoogleAccountAlreadyExistsException
+import com.wafflestudio.spring2025.domain.auth.InvalidVerificationCodeException
 import com.wafflestudio.spring2025.domain.auth.SignUpBadEmailException
 import com.wafflestudio.spring2025.domain.auth.SignUpBadNameException
 import com.wafflestudio.spring2025.domain.auth.SignUpBadPasswordException
@@ -43,7 +43,6 @@ class EmailVerificationService(
         name: String,
         password: String,
     ) {
-
         validateEmail(email)
         validateName(name)
         validatePassword(password)
@@ -55,13 +54,15 @@ class EmailVerificationService(
         }
 
         userRepository.findByEmail(email)?.let { user ->
-            identityRepository.findByUserId(user.id!!).ifEmpty {
-                throw EmailAccountAlreadyExistsException()
-            }.forEach { identity ->
-                when(identity.provider){
-                    SocialProvider.GOOGLE.name -> throw GoogleAccountAlreadyExistsException()
+            identityRepository
+                .findByUserId(user.id!!)
+                .ifEmpty {
+                    throw EmailAccountAlreadyExistsException()
+                }.forEach { identity ->
+                    when (identity.provider) {
+                        SocialProvider.GOOGLE.name -> throw GoogleAccountAlreadyExistsException()
+                    }
                 }
-            }
             throw EmailAccountAlreadyExistsException()
         }
 
