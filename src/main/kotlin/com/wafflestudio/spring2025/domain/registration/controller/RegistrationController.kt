@@ -2,6 +2,7 @@ package com.wafflestudio.spring2025.domain.registration.controller
 
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.registration.RegistrationInvalidStatusException
+import com.wafflestudio.spring2025.domain.registration.dto.GetRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.PatchRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.UpdateRegistrationStatusRequest
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
@@ -10,6 +11,7 @@ import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
@@ -38,6 +40,21 @@ class RegistrationController(
         val status = request.status ?: throw RegistrationInvalidStatusException()
         val response = registrationService.updateStatus(userId, registrationId, status)
 
+        return ResponseEntity.ok(response)
+    }
+
+    @Operation(
+        summary = "신청 단건 정보 요청",
+        description =
+            "신청 단건의 정보를 반환합니다.",
+    )
+    @GetMapping
+    fun getRegistrationInformation(
+        @PathVariable registrationId: Long,
+        @LoggedInUser user: User,
+    ): ResponseEntity<GetRegistrationResponse> {
+        val userId = user.id ?: throw UserIdentityNotFoundException()
+        val response = registrationService.getRegistrationInformation(registrationId, userId)
         return ResponseEntity.ok(response)
     }
 }
