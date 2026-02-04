@@ -21,8 +21,6 @@ import com.wafflestudio.spring2025.domain.registration.dto.PatchRegistrationResp
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse.Guest
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationStatusResponse
-import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationDto
-import com.wafflestudio.spring2025.domain.registration.dto.core.RegistrationWithEventDto
 import com.wafflestudio.spring2025.domain.registration.model.Registration
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationToken
@@ -213,38 +211,15 @@ class RegistrationService(
         )
     }
 
-    fun getByUserId(userId: Long): List<RegistrationDto> =
-        registrationRepository
-            .findByUserId(userId)
-            .map { registration -> RegistrationDto(registration) }
-
-    fun getByPublicId(
-        eventId: Long,
-        registrationPublicId: String,
-        requesterId: Long,
-    ): RegistrationDto {
-        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
-        if (event.createdBy != requesterId) {
-            throw RegistrationUnauthorizedException()
-        }
-        val registration =
-            registrationRepository.findByRegistrationPublicId(registrationPublicId)
-                ?: throw RegistrationNotFoundException()
-        if (registration.eventId != eventId) {
-            throw RegistrationNotFoundException()
-        }
-        return RegistrationDto(registration)
-    }
-
-    fun getByUserIdWithEvents(
+    fun getMyRegistrations(
         userId: Long,
         page: Int,
         size: Int,
-    ): List<RegistrationWithEventDto> {
+    ): GetMyRegistrationsResponse {
         val registrations = registrationRepository.findByUserIdOrderByCreatedAtDesc(userId)
         val paged = registrations.drop(page * size).take(size)
         if (paged.isEmpty()) {
-            return emptyList()
+            return GetMyRegistrationsResponse(registrations = emptyList())
         }
 
         val eventIds = paged.map { it.eventId }.distinct()
@@ -253,10 +228,45 @@ class RegistrationService(
                 event.id ?: throw EventNotFoundException()
             }
 
-        return paged.map { registration ->
-            val event = eventsById[registration.eventId] ?: throw EventNotFoundException()
-            RegistrationWithEventDto(registration, event)
-        }
+        val countsByEventId =
+            eventIds.associateWith { eventId ->
+                val confirmed =
+                    registrationRepository
+                        .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
+                        .toInt()
+                val waiting =
+                    registrationRepository
+                        .countByEventIdAndStatus(eventId, RegistrationStatus.WAITING)
+                        .toInt()
+                confirmed + waiting
+            }
+
+        val waitingsByEventId =
+            eventIds.associateWith { eventId ->
+                registrationRepository
+                    .findByEventIdAndStatusOrderByCreatedAtAsc(eventId, RegistrationStatus.WAITING)
+            }
+
+        val items =
+            paged.map { registration ->
+                val event = eventsById[registration.eventId] ?: throw EventNotFoundException()
+                val waitingNum =
+                    if (registration.status == RegistrationStatus.WAITING) {
+                        val waitingList = waitingsByEventId[registration.eventId].orEmpty()
+                        val index = waitingList.indexOfFirst { it.id == registration.id }
+                        if (index >= 0) index + 1 else null
+                    } else {
+                        0
+                    }
+                MyRegistrationItem(
+                    registration = registration,
+                    event = event,
+                    registrationCnt = countsByEventId[registration.eventId] ?: 0,
+                    waitingNum = waitingNum,
+                )
+            }
+
+        return GetMyRegistrationsResponse(registrations = items)
     }
 
     fun updateStatus(
