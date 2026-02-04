@@ -16,7 +16,9 @@ import com.wafflestudio.spring2025.domain.registration.RegistrationUnauthorizedE
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongEmailException
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongNameException
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.GetMyRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.GetRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.MyRegistrationItem
 import com.wafflestudio.spring2025.domain.registration.dto.PatchRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse.Guest
@@ -236,7 +238,7 @@ class RegistrationService(
                         .toInt()
                 val waiting =
                     registrationRepository
-                        .countByEventIdAndStatus(eventId, RegistrationStatus.WAITING)
+                        .countByEventIdAndStatus(eventId, RegistrationStatus.WAITLISTED)
                         .toInt()
                 confirmed + waiting
             }
@@ -244,14 +246,14 @@ class RegistrationService(
         val waitingsByEventId =
             eventIds.associateWith { eventId ->
                 registrationRepository
-                    .findByEventIdAndStatusOrderByCreatedAtAsc(eventId, RegistrationStatus.WAITING)
+                    .findByEventIdAndStatusOrderByCreatedAtAsc(eventId, RegistrationStatus.WAITLISTED)
             }
 
         val items =
             paged.map { registration ->
                 val event = eventsById[registration.eventId] ?: throw EventNotFoundException()
                 val waitingNum =
-                    if (registration.status == RegistrationStatus.WAITING) {
+                    if (registration.status == RegistrationStatus.WAITLISTED) {
                         val waitingList = waitingsByEventId[registration.eventId].orEmpty()
                         val index = waitingList.indexOfFirst { it.id == registration.id }
                         if (index >= 0) index + 1 else null

@@ -66,7 +66,7 @@ enum class MyRegistrationStatus {
                 RegistrationStatus.HOST,
                 RegistrationStatus.CONFIRMED,
                 -> CONFIRMED
-                RegistrationStatus.WAITING -> WAITLISTED
+                RegistrationStatus.WAITLISTED -> WAITLISTED
                 RegistrationStatus.CANCELED,
                 RegistrationStatus.BANNED,
                 -> CANCELED
