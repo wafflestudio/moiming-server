@@ -62,4 +62,12 @@ management:
       show-details: always
 
 cors:
-  allowed-origins: http://localhost:3000,http://localhost:5173
+  allowed-origins: >
+    http://localhost:3000,
+    http://localhost:5173,
+    https://www.moiming.app,
+    https://moiming.app,
+    https://api.moiming.app
+
+server:
+  forward-headers-strategy: framework
