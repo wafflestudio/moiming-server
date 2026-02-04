@@ -3,7 +3,7 @@ package com.wafflestudio.spring2025.domain.registration.controller
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationRequest
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
-import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse
+import com.wafflestudio.spring2025.domain.registration.dto.GetEventRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -52,9 +53,20 @@ class EventRegistrationController(
     fun list(
         @PathVariable eventId: Long,
         @LoggedInUser user: User,
-    ): ResponseEntity<RegistrationGuestsResponse> {
+        @RequestParam(required = false) status: String?,
+        @RequestParam(required = false) orderBy: String?,
+        @RequestParam(required = false) cursor: Int?,
+    ): ResponseEntity<GetEventRegistrationsResponse> {
         val userId = requireNotNull(user.id) { "로그인 사용자 ID가 없습니다." }
-        return ResponseEntity.ok(registrationService.getGuestsByEventId(eventId, userId))
+        return ResponseEntity.ok(
+            registrationService.getEventRegistration(
+                eventId = eventId,
+                requesterId = userId,
+                status = status,
+                orderBy = orderBy,
+                cursor = cursor,
+            ),
+        )
     }
 
     // 나중에 프론트에 요청에 따라 수정
