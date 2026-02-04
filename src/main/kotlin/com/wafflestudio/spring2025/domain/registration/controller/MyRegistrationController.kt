@@ -1,7 +1,7 @@
 package com.wafflestudio.spring2025.domain.registration.controller
 
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
-import com.wafflestudio.spring2025.domain.registration.dto.MyRegistrationsResponse
+import com.wafflestudio.spring2025.domain.registration.dto.GetMyRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
@@ -28,7 +28,7 @@ class MyRegistrationController(
         @Parameter(hidden = true) @LoggedInUser user: User,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
-    ): ResponseEntity<MyRegistrationsResponse> {
+    ): ResponseEntity<GetMyRegistrationsResponse> {
         val userId = requireNotNull(user.id) { "로그인 사용자 ID가 없습니다." }
         return ResponseEntity.ok(registrationService.getMyRegistrations(userId, page, size))
     }

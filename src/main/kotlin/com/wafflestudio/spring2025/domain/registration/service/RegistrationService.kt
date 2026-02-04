@@ -17,7 +17,7 @@ import com.wafflestudio.spring2025.domain.registration.RegistrationWrongEmailExc
 import com.wafflestudio.spring2025.domain.registration.RegistrationWrongNameException
 import com.wafflestudio.spring2025.domain.registration.dto.CreateRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.MyRegistrationItem
-import com.wafflestudio.spring2025.domain.registration.dto.MyRegistrationsResponse
+import com.wafflestudio.spring2025.domain.registration.dto.GetMyRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.PatchRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.RegistrationGuestsResponse.Guest
@@ -216,11 +216,11 @@ class RegistrationService(
         userId: Long,
         page: Int,
         size: Int,
-    ): MyRegistrationsResponse {
+    ): GetMyRegistrationsResponse {
         val registrations = registrationRepository.findByUserIdOrderByCreatedAtDesc(userId)
         val paged = registrations.drop(page * size).take(size)
         if (paged.isEmpty()) {
-            return MyRegistrationsResponse(registrations = emptyList())
+            return GetMyRegistrationsResponse(registrations = emptyList())
         }
 
         val eventIds = paged.map { it.eventId }.distinct()
@@ -267,7 +267,7 @@ class RegistrationService(
                 )
             }
 
-        return MyRegistrationsResponse(registrations = items)
+        return GetMyRegistrationsResponse(registrations = items)
     }
 
     fun updateStatus(

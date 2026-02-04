@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 
 @Schema(description = "내 이벤트 신청 목록 응답")
-data class MyRegistrationsResponse(
+data class GetMyRegistrationsResponse(
     @Schema(description = "신청 목록")
     val registrations: List<MyRegistrationItem>,
 )
