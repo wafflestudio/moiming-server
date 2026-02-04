@@ -82,7 +82,7 @@ class EmailService(
 
                 logger.info("신청 확정 정보가 $toEmail 로 전달되었습니다.")
             }
-            RegistrationStatus.WAITING -> {
+            RegistrationStatus.WAITLISTED -> {
                 val htmlContent =
                     loadTemplate("registration-waitlisted.html")
                         .replace("{eventTitle}", eventTitle)

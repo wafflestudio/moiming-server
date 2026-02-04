@@ -25,7 +25,7 @@ class EventRegistrationController(
     @Operation(
         summary = "이벤트 참여 신청",
         description =
-            "특정 이벤트에 신청합니다. 정원이 남아있으면 CONFIRMED로 등록되고, 정원이 찼으나 대기 명단이 허용된 경우 WAITING으로 등록됩니다. " +
+            "특정 이벤트에 신청합니다. 정원이 남아있으면 CONFIRMED로 등록되고, 정원이 찼으나 대기 명단이 허용된 경우 WAITLISTED로 등록됩니다. " +
                 "정원이 찼고 대기 명단이 비활성화된 경우 신청이 거절됩니다.",
     )
     @PostMapping
@@ -46,7 +46,7 @@ class EventRegistrationController(
 
     @Operation(
         summary = "이벤트 신청 목록 조회",
-        description = "특정 이벤트에 속한 신청 목록을 조회합니다. 신청 상태(CONFIRMED/WAITING/CANCELED)와 신청 시각을 포함해 반환합니다.",
+        description = "특정 이벤트에 속한 신청 목록을 조회합니다. 신청 상태(CONFIRMED/WAITLISTED/CANCELED)와 신청 시각을 포함해 반환합니다.",
     )
     @GetMapping
     fun list(
