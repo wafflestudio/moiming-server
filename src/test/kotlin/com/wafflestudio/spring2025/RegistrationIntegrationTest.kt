@@ -136,7 +136,7 @@ class RegistrationIntegrationTest
                     CreateRegistrationResponse::class.java,
                 )
 
-            assertThat(response2.status.name).isEqualTo("WAITING")
+            assertThat(response2.status.name).isEqualTo("WAITLISTED")
             assertThat(response2.waitingNum).isEqualTo(1)
             assertThat(response2.confirmEmail).isEqualTo("guest4b@example.com")
         }

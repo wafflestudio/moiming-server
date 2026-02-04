@@ -106,11 +106,11 @@ class EventService(
                 ).toInt()
 
         val waitingNum: Int? =
-            if (myRegistration?.status == RegistrationStatus.WAITING) {
+            if (myRegistration?.status == RegistrationStatus.WAITLISTED) {
                 val waitings =
                     registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
                         eventID = eventId,
-                        registrationStatus = RegistrationStatus.WAITING,
+                        registrationStatus = RegistrationStatus.WAITLISTED,
                     )
                 val idx = waitings.indexOfFirst { it.id == myRegistration.id }
                 if (idx >= 0) idx + 1 else null
