@@ -10,6 +10,8 @@ import java.time.Instant
 data class GetEventRegistrationsResponse(
     @Schema(description = "신청자 목록")
     val participants: List<EventRegistrationItem>,
+    @Schema(description = "필터에 따라 변하는 참여자 수")
+    val totalCount: Int?,
     @Schema(description = "다음 페이지 커서 (없으면 null)")
     val nextCursor: Int?,
     @Schema(description = "다음 페이지 존재 여부")

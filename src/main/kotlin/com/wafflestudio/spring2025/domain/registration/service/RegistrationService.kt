@@ -418,9 +418,11 @@ class RegistrationService(
         val lastIndex = startIndex + page.size - 1
         val hasNext = (startIndex + page.size) < sorted.size
         val nextCursor = if (hasNext && page.isNotEmpty()) lastIndex else null
+        val totalCount = items.size
 
         return GetEventRegistrationsResponse(
             participants = page,
+            totalCount = totalCount,
             nextCursor = nextCursor,
             hasNext = hasNext,
         )
