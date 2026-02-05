@@ -18,7 +18,7 @@ enum class ViewerStatus {
     WAITLISTED,
 
     @Schema(description = "자진 취소한 사용자")
-    CANCELLED,
+    CANCELED,
 
     @Schema(description = "강제 취소(차단)된 사용자")
     BANNED,

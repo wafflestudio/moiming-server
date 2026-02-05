@@ -11,10 +11,10 @@ data class MyEventsInfiniteResponse(
 data class MyEventResponse(
     val publicId: String,
     val title: String,
-    val startAt: Instant?,
-    val endAt: Instant?,
-    val registrationStart: Instant?,
-    val registrationDeadline: Instant?,
+    val startsAt: Instant?,
+    val endsAt: Instant?,
+    val registrationStartsAt: Instant?,
+    val registrationEndsAt: Instant?,
     val capacity: Int?,
     val totalApplicants: Int,
 )

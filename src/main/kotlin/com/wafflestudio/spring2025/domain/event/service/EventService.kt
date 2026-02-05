@@ -38,21 +38,21 @@ class EventService(
         title: String,
         description: String?,
         location: String?,
-        startAt: Instant?,
-        endAt: Instant?,
+        startsAt: Instant?,
+        endsAt: Instant?,
         capacity: Int?,
         waitlistEnabled: Boolean,
-        registrationStart: Instant?,
-        registrationDeadline: Instant?,
+        registrationStartsAt: Instant?,
+        registrationEndsAt: Instant?,
         createdBy: Long,
     ): String {
         validateCreateOrUpdate(
             title = title,
-            startAt = startAt,
-            endAt = endAt,
+            startsAt = startsAt,
+            endsAt = endsAt,
             capacity = capacity,
-            registrationStart = registrationStart,
-            registrationDeadline = registrationDeadline,
+            registrationStartsAt = registrationStartsAt,
+            registrationEndsAt = registrationEndsAt,
         )
 
         val event =
@@ -61,12 +61,12 @@ class EventService(
                 title = title.trim(),
                 description = description,
                 location = location,
-                startAt = startAt,
-                endAt = endAt,
+                startsAt = startsAt,
+                endsAt = endsAt,
                 capacity = capacity,
                 waitlistEnabled = waitlistEnabled,
-                registrationStart = registrationStart,
-                registrationDeadline = registrationDeadline,
+                registrationStartsAt = registrationStartsAt,
+                registrationEndsAt = registrationEndsAt,
                 createdBy = createdBy,
             )
 
@@ -104,9 +104,6 @@ class EventService(
 
         // totalApplicants = HOST + CONFIRMED + WAITING (CANCELED/BANNED 제외)
         val hostCnt = 1
-        // 일단 hostCnt는 1로 고정
-//        val hostCnt =
-//            registrationRepository.countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.HOST).toInt()
         val confirmedCnt =
             registrationRepository.countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED).toInt()
         val waitingCnt =
@@ -136,8 +133,8 @@ class EventService(
                     when (myReg.status) {
                         RegistrationStatus.HOST -> ViewerStatus.HOST
                         RegistrationStatus.CONFIRMED -> ViewerStatus.CONFIRMED
-                        RegistrationStatus.WAITING -> ViewerStatus.WAITLISTED
-                        RegistrationStatus.CANCELED -> ViewerStatus.CANCELLED
+                        RegistrationStatus.WAITLISTED -> ViewerStatus.WAITLISTED
+                        RegistrationStatus.CANCELED -> ViewerStatus.CANCELED
                         RegistrationStatus.BANNED -> ViewerStatus.BANNED
                     }
             }
@@ -149,7 +146,6 @@ class EventService(
                 waitlistPosition = waitlistPosition,
                 registrationPublicId = if (isGuest) myReg!!.registrationPublicId else null,
                 reservationEmail = if (isGuest) myReg!!.guestEmail else null,
-                // GUEST인 경우에만 publicId, email 내려주는 로직
             )
 
         // capabilities
@@ -160,8 +156,8 @@ class EventService(
                 hostCount = hostCnt,
                 confirmedCount = confirmedCnt,
                 waitlistEnabled = event.waitlistEnabled,
-                registrationStart = event.registrationStart,
-                registrationDeadline = event.registrationDeadline,
+                registrationStartsAt = event.registrationStartsAt,
+                registrationEndsAt = event.registrationEndsAt,
             )
 
         // guestsPreview: CONFIRMED 중 userId 있는 회원만 최대 5명
@@ -194,12 +190,12 @@ class EventService(
                     title = event.title,
                     description = event.description,
                     location = event.location,
-                    startAt = event.startAt,
-                    endAt = event.endAt,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
                     capacity = event.capacity,
                     totalApplicants = totalApplicants,
-                    registrationStart = event.registrationStart,
-                    registrationDeadline = event.registrationDeadline,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
                 ),
             creator =
                 CreatorInfo(
@@ -246,19 +242,11 @@ class EventService(
 
         val nextCursor = sliced.lastOrNull()?.createdAt
 
-        // registrationCnt = HOST + CONFIRMED + WAITING 합
-        // (동작 우선 N+1 방식; 나중에 group-by로 최적화 가능)
         val responses =
             sliced.map { event ->
                 val eventId = requireNotNull(event.id) { "Event id is null: publicId=${event.publicId}" }
 
                 val hostCnt = 1
-                // HOST는 반드시 참가.
-//                val hostCnt =
-//                    registrationRepository.countByEventIdAndStatus(
-//                        eventID = eventId,
-//                        registrationStatus = RegistrationStatus.HOST,
-//                    ).toInt()
 
                 val confirmedCnt =
                     registrationRepository
@@ -277,13 +265,12 @@ class EventService(
                 MyEventResponse(
                     publicId = event.publicId,
                     title = event.title,
-                    startAt = event.startAt,
-                    endAt = event.endAt,
-                    registrationStart = event.registrationStart,
-                    registrationDeadline = event.registrationDeadline,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
                     capacity = event.capacity,
                     totalApplicants = hostCnt + confirmedCnt + waitingCnt,
-                    // 현재 hostCnt는 무조건 1인데, 나중에 로직 수정
                 )
             }
 
@@ -299,12 +286,12 @@ class EventService(
         title: String?,
         description: String?,
         location: String?,
-        startAt: Instant?,
-        endAt: Instant?,
+        startsAt: Instant?,
+        endsAt: Instant?,
         capacity: Int?,
         waitlistEnabled: Boolean?,
-        registrationStart: Instant?,
-        registrationDeadline: Instant?,
+        registrationStartsAt: Instant?,
+        registrationEndsAt: Instant?,
         requesterId: Long,
     ): Event {
         val event = getEventByPublicId(publicId)
@@ -321,21 +308,21 @@ class EventService(
         }
         description?.let { event.description = it }
         location?.let { event.location = it }
-        startAt?.let { event.startAt = it }
-        endAt?.let { event.endAt = it }
+        startsAt?.let { event.startsAt = it }
+        endsAt?.let { event.endsAt = it }
         capacity?.let { event.capacity = it }
         waitlistEnabled?.let { event.waitlistEnabled = it }
-        registrationStart?.let { event.registrationStart = it }
-        registrationDeadline?.let { event.registrationDeadline = it }
+        registrationStartsAt?.let { event.registrationStartsAt = it }
+        registrationEndsAt?.let { event.registrationEndsAt = it }
 
         // 변경 후에도 도메인 규칙 검증
         validateCreateOrUpdate(
             title = event.title,
-            startAt = event.startAt,
-            endAt = event.endAt,
+            startsAt = event.startsAt,
+            endsAt = event.endsAt,
             capacity = event.capacity,
-            registrationStart = event.registrationStart,
-            registrationDeadline = event.registrationDeadline,
+            registrationStartsAt = event.registrationStartsAt,
+            registrationEndsAt = event.registrationEndsAt,
         )
 
         return eventRepository.save(event)
@@ -369,17 +356,17 @@ class EventService(
 
     private fun validateCreateOrUpdate(
         title: String,
-        startAt: Instant?,
-        endAt: Instant?,
+        startsAt: Instant?,
+        endsAt: Instant?,
         capacity: Int?,
-        registrationStart: Instant?,
-        registrationDeadline: Instant?,
+        registrationStartsAt: Instant?,
+        registrationEndsAt: Instant?,
     ) {
         if (title.isBlank()) {
             throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
         }
 
-        if (startAt != null && endAt != null && !startAt.isBefore(endAt)) {
+        if (startsAt != null && endsAt != null && !startsAt.isBefore(endsAt)) {
             throw EventValidationException(EventErrorCode.EVENT_TIME_RANGE_INVALID)
         }
 
@@ -387,26 +374,26 @@ class EventService(
             throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
         }
 
-        // registrationStart / registrationDeadline 관계
-        if (registrationStart != null &&
-            registrationDeadline != null &&
-            registrationStart.isAfter(registrationDeadline)
+        // registrationStartsAt / registrationEndsAt 관계
+        if (registrationStartsAt != null &&
+            registrationEndsAt != null &&
+            registrationStartsAt.isAfter(registrationEndsAt)
         ) {
             throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
 
-        // registrationDeadline <= startAt
-        if (registrationDeadline != null &&
-            startAt != null &&
-            registrationDeadline.isAfter(startAt)
+        // registrationEndsAt <= startsAt
+        if (registrationEndsAt != null &&
+            startsAt != null &&
+            registrationEndsAt.isAfter(startsAt)
         ) {
             throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
 
-        // registrationStart <= startAt
-        if (registrationStart != null &&
-            startAt != null &&
-            registrationStart.isAfter(startAt)
+        // registrationStartsAt <= startsAt
+        if (registrationStartsAt != null &&
+            startsAt != null &&
+            registrationStartsAt.isAfter(startsAt)
         ) {
             throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
@@ -418,22 +405,20 @@ class EventService(
         hostCount: Int,
         confirmedCount: Int,
         waitlistEnabled: Boolean,
-        registrationStart: Instant?,
-        registrationDeadline: Instant?,
+        registrationStartsAt: Instant?,
+        registrationEndsAt: Instant?,
         now: Instant = Instant.now(),
     ): CapabilitiesInfo {
         // 신청 가능 시간(window) 판단
         val withinWindow =
-            (registrationStart?.let { !now.isBefore(it) } ?: true) &&
-                (registrationDeadline?.let { !now.isAfter(it) } ?: true)
+            (registrationStartsAt?.let { !now.isBefore(it) } ?: true) &&
+                    (registrationEndsAt?.let { !now.isAfter(it) } ?: true)
 
         // 정원 판단: HOST + CONFIRMED 기준
         val isFull =
             capacity != null && (hostCount + confirmedCount) >= capacity
 
         // 현재 신청 가능 조건
-        // 신청 기간 안이어야 하고
-        // 정원이 남았거나, 정원이 찼어도 대기가 가능해야 함
         val canApplyNow =
             withinWindow && (!isFull || waitlistEnabled)
 
