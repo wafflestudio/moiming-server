@@ -32,7 +32,6 @@ class EventService(
 ) {
     /**
      * 일정 생성
-     * API 설계상 body를 비우고 201 + Location을 주기 위해 생성된 publicId를 반환
      */
     fun create(
         title: String,
@@ -70,8 +69,7 @@ class EventService(
                 createdBy = createdBy,
             )
 
-        val saved = eventRepository.save(event)
-        return saved.publicId
+        return eventRepository.save(event).publicId
     }
 
     /**
@@ -79,54 +77,54 @@ class EventService(
      */
     fun getDetail(
         publicId: String,
-        requesterId: Long,
+        requesterId: Long?,
     ): EventDetailResponse {
         val event = getEventByPublicId(publicId)
+        val eventId = requireNotNull(event.id) { "Event id is null: publicId=$publicId" }
 
-        val eventId =
-            requireNotNull(event.id) {
-                "Event internal id is null: publicId=$publicId"
-            }
-
-        // creator 조회
         val creatorUser =
             userRepository.findById(event.createdBy).orElseThrow {
-                // createdBy가 users FK면 거의 안 나지만, 안전하게
                 EventNotFoundException(publicId)
             }
 
-        // viewer(로그인 유저)의 registration
         val myReg =
-            registrationRepository.findByUserIdAndEventId(
-                userId = requesterId,
-                eventId = eventId,
-            )
+            if (requesterId == null) {
+                null
+            } else {
+                registrationRepository.findByUserIdAndEventId(
+                    userId = requesterId,
+                    eventId = eventId,
+                )
+            }
 
-        // totalApplicants = HOST + CONFIRMED + WAITING (CANCELED/BANNED 제외)
-        val hostCnt = 1
-        val confirmedCnt =
-            registrationRepository.countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED).toInt()
-        val waitingCnt =
-            registrationRepository.countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.WAITING).toInt()
-        val totalApplicants = hostCnt + confirmedCnt + waitingCnt
+        val confirmedCount =
+            registrationRepository
+                .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
+                .toInt()
 
-        // waitlistPosition: 내 상태가 WAITING일 때만 계산
+        val waitlistedCount =
+            registrationRepository
+                .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.WAITLISTED)
+                .toInt()
+
+        val totalApplicants = confirmedCount + waitlistedCount
+
         val waitlistPosition: Int? =
-            if (myReg?.status == RegistrationStatus.WAITING) {
-                val waitings =
+            if (myReg?.status == RegistrationStatus.WAITLISTED) {
+                val waitlistedRegs =
                     registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
                         eventID = eventId,
-                        registrationStatus = RegistrationStatus.WAITING,
+                        registrationStatus = RegistrationStatus.WAITLISTED,
                     )
-                val idx = waitings.indexOfFirst { it.id == myReg.id }
+                val idx = waitlistedRegs.indexOfFirst { it.id == myReg.id }
                 if (idx >= 0) idx + 1 else null
             } else {
                 null
             }
 
-        // viewer.status 결정
         val viewerStatus: ViewerStatus =
             when {
+                requesterId == null -> ViewerStatus.NONE
                 requesterId == event.createdBy -> ViewerStatus.HOST
                 myReg == null -> ViewerStatus.NONE
                 else ->
@@ -139,28 +137,33 @@ class EventService(
                     }
             }
 
-        val isGuest = myReg?.userId == null && myReg != null
         val viewer =
-            ViewerInfo(
-                status = viewerStatus,
-                waitlistPosition = waitlistPosition,
-                registrationPublicId = if (isGuest) myReg!!.registrationPublicId else null,
-                reservationEmail = if (isGuest) myReg!!.guestEmail else null,
-            )
+            if (viewerStatus == ViewerStatus.NONE) {
+                ViewerInfo(
+                    status = ViewerStatus.NONE,
+                    waitlistPosition = null,
+                    registrationPublicId = null,
+                    reservationEmail = null,
+                )
+            } else {
+                ViewerInfo(
+                    status = viewerStatus,
+                    waitlistPosition = waitlistPosition,
+                    registrationPublicId = myReg?.registrationPublicId,
+                    reservationEmail = myReg?.guestEmail,
+                )
+            }
 
-        // capabilities
         val capabilities =
             buildCapabilities(
                 viewerStatus = viewerStatus,
                 capacity = event.capacity,
-                hostCount = hostCnt,
-                confirmedCount = confirmedCnt,
+                confirmedCount = confirmedCount,
                 waitlistEnabled = event.waitlistEnabled,
                 registrationStartsAt = event.registrationStartsAt,
                 registrationEndsAt = event.registrationEndsAt,
             )
 
-        // guestsPreview: CONFIRMED 중 userId 있는 회원만 최대 5명
         val confirmedRegs =
             registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
                 eventID = eventId,
@@ -173,14 +176,15 @@ class EventService(
         val usersById =
             userRepository.findAllById(previewUserIds).associateBy { it.id!! }
 
-        val guestsPreview: List<GuestPreview> =
+        val guestsPreview =
             previewUserIds.mapNotNull { uid ->
-                val u = usersById[uid] ?: return@mapNotNull null
-                GuestPreview(
-                    id = u.id!!,
-                    name = u.name,
-                    profileImage = u.profileImage,
-                )
+                usersById[uid]?.let {
+                    GuestPreview(
+                        id = it.id!!,
+                        name = it.name,
+                        profileImage = it.profileImage,
+                    )
+                }
             }
 
         return EventDetailResponse(
@@ -210,8 +214,7 @@ class EventService(
     }
 
     /**
-     * 내가 만든 일정 조회
-     * 처음에는 cursor가 null, 그 이후에는 이전 Response에서 받은 cursor로 목록 조회
+     * 내가 만든 일정 조회 (무한 스크롤)
      */
     fun getMyEventsInfinite(
         createdBy: Long,
@@ -222,11 +225,11 @@ class EventService(
         val pageable =
             PageRequest.of(
                 0,
-                pageSize + 1, // +1로 hasNext 판단
+                pageSize + 1,
                 Sort.by(Sort.Direction.DESC, "createdAt"),
             )
 
-        val fetched: List<Event> =
+        val fetched =
             if (cursor == null) {
                 eventRepository.findByCreatedByAndCreatedAtIsNotNullOrderByCreatedAtDesc(createdBy, pageable)
             } else {
@@ -239,28 +242,21 @@ class EventService(
 
         val hasNext = fetched.size > pageSize
         val sliced = fetched.take(pageSize)
-
         val nextCursor = sliced.lastOrNull()?.createdAt
 
         val responses =
             sliced.map { event ->
-                val eventId = requireNotNull(event.id) { "Event id is null: publicId=${event.publicId}" }
+                val eventId = requireNotNull(event.id)
 
-                val hostCnt = 1
-
-                val confirmedCnt =
+                val confirmedCount =
                     registrationRepository
-                        .countByEventIdAndStatus(
-                            eventID = eventId,
-                            registrationStatus = RegistrationStatus.CONFIRMED,
-                        ).toInt()
+                        .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
+                        .toInt()
 
-                val waitingCnt =
+                val waitlistedCount =
                     registrationRepository
-                        .countByEventIdAndStatus(
-                            eventID = eventId,
-                            registrationStatus = RegistrationStatus.WAITING,
-                        ).toInt()
+                        .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.WAITLISTED)
+                        .toInt()
 
                 MyEventResponse(
                     publicId = event.publicId,
@@ -270,7 +266,7 @@ class EventService(
                     registrationStartsAt = event.registrationStartsAt,
                     registrationEndsAt = event.registrationEndsAt,
                     capacity = event.capacity,
-                    totalApplicants = hostCnt + confirmedCnt + waitingCnt,
+                    totalApplicants = confirmedCount + waitlistedCount,
                 )
             }
 
@@ -295,15 +291,10 @@ class EventService(
         requesterId: Long,
     ): Event {
         val event = getEventByPublicId(publicId)
-
-        // 생성자 권한 체크
         requireCreator(event, requesterId)
 
-        // null은 "변경 없음"
         title?.let {
-            if (it.isBlank()) {
-                throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
-            }
+            if (it.isBlank()) throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
             event.title = it.trim()
         }
         description?.let { event.description = it }
@@ -315,7 +306,6 @@ class EventService(
         registrationStartsAt?.let { event.registrationStartsAt = it }
         registrationEndsAt?.let { event.registrationEndsAt = it }
 
-        // 변경 후에도 도메인 규칙 검증
         validateCreateOrUpdate(
             title = event.title,
             startsAt = event.startsAt,
@@ -333,11 +323,7 @@ class EventService(
         requesterId: Long,
     ) {
         val event = getEventByPublicId(publicId)
-
-        // 생성자 권한 체크
         requireCreator(event, requesterId)
-
-        // 내부 PK로 삭제
         eventRepository.deleteById(requireNotNull(event.id))
     }
 
@@ -345,10 +331,7 @@ class EventService(
         eventRepository.findByPublicId(publicId)
             ?: throw EventNotFoundException(publicId)
 
-    private fun requireCreator(
-        event: Event,
-        requesterId: Long,
-    ) {
+    private fun requireCreator(event: Event, requesterId: Long) {
         if (event.createdBy != requesterId) {
             throw EventForbiddenException(requesterId)
         }
@@ -374,7 +357,6 @@ class EventService(
             throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
         }
 
-        // registrationStartsAt / registrationEndsAt 관계
         if (registrationStartsAt != null &&
             registrationEndsAt != null &&
             registrationStartsAt.isAfter(registrationEndsAt)
@@ -382,7 +364,6 @@ class EventService(
             throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
 
-        // registrationEndsAt <= startsAt
         if (registrationEndsAt != null &&
             startsAt != null &&
             registrationEndsAt.isAfter(startsAt)
@@ -390,7 +371,6 @@ class EventService(
             throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
         }
 
-        // registrationStartsAt <= startsAt
         if (registrationStartsAt != null &&
             startsAt != null &&
             registrationStartsAt.isAfter(startsAt)
@@ -409,16 +389,13 @@ class EventService(
         registrationEndsAt: Instant?,
         now: Instant = Instant.now(),
     ): CapabilitiesInfo {
-        // 신청 가능 시간(window) 판단
         val withinWindow =
             (registrationStartsAt?.let { !now.isBefore(it) } ?: true) &&
                     (registrationEndsAt?.let { !now.isAfter(it) } ?: true)
 
-        // 정원 판단: HOST + CONFIRMED 기준
         val isFull =
             capacity != null && (hostCount + confirmedCount) >= capacity
 
-        // 현재 신청 가능 조건
         val canApplyNow =
             withinWindow && (!isFull || waitlistEnabled)
 
@@ -437,7 +414,7 @@ class EventService(
                     cancel = true,
                 )
 
-            ViewerStatus.CANCELLED, ViewerStatus.NONE ->
+            ViewerStatus.CANCELED, ViewerStatus.NONE ->
                 CapabilitiesInfo(
                     shareLink = false,
                     apply = canApplyNow,

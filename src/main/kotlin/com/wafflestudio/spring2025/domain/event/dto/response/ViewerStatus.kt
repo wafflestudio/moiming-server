@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  */
 @Schema(description = "이벤트 조회자(Viewer)의 상태")
 enum class ViewerStatus {
-    @Schema(description = "이벤트 생성자 또는 HOST")
+    @Schema(description = "이벤트 생성자")
     HOST,
 
     @Schema(description = "참여 확정된 사용자")
