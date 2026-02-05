@@ -42,12 +42,13 @@ class AuthController(
         @RequestBody signupRequest: SignupRequest,
     ): ResponseEntity<Void> {
         // profileImage는 회원가입에서 받지 않는 정책이면 null로 고정
-        authService.signup(
+
+        emailVerificationService.createPendingUser(
             email = signupRequest.email,
             name = signupRequest.name,
             password = signupRequest.password,
-            profileImage = null,
         )
+
         return ResponseEntity.noContent().build()
     }
 

@@ -47,9 +47,16 @@ class InvalidVerificationCodeException :
         msg = "Invalid or expired verification code",
     )
 
-class SignUpEmailConflictException :
+class EmailAccountAlreadyExistsException :
     AuthException(
         errorCode = 1004,
         httpStatusCode = HttpStatus.CONFLICT,
-        msg = "Email conflict",
+        msg = "Email account already exists",
+    )
+
+class GoogleAccountAlreadyExistsException :
+    AuthException(
+        errorCode = 1101,
+        httpStatusCode = HttpStatus.CONFLICT,
+        msg = "Google account already exists",
     )

@@ -17,9 +17,9 @@ class SwaggerConfig {
         return OpenAPI()
             .info(
                 Info()
-                    .title("Moisha - Club Management System API")
+                    .title("Moiming - Event Schedule Management System API")
                     .version("1.0")
-                    .description("동아리 관리 시스템 API 문서"),
+                    .description("모임 일정 관리 시스템 '모이밍' API 문서"),
             ).addSecurityItem(
                 SecurityRequirement().addList(securitySchemeName),
             ).components(

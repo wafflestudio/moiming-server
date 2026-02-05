@@ -1,21 +1,31 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
 import com.wafflestudio.spring2025.common.email.service.EmailService
+import com.wafflestudio.spring2025.domain.auth.EmailAccountAlreadyExistsException
+import com.wafflestudio.spring2025.domain.auth.GoogleAccountAlreadyExistsException
 import com.wafflestudio.spring2025.domain.auth.InvalidVerificationCodeException
-import com.wafflestudio.spring2025.domain.auth.SignUpEmailConflictException
+import com.wafflestudio.spring2025.domain.auth.SignUpBadEmailException
+import com.wafflestudio.spring2025.domain.auth.SignUpBadNameException
+import com.wafflestudio.spring2025.domain.auth.SignUpBadPasswordException
+import com.wafflestudio.spring2025.domain.auth.model.SocialProvider
+import com.wafflestudio.spring2025.domain.user.identity.repository.UserIdentityRepository
 import com.wafflestudio.spring2025.domain.user.model.PendingUser
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.PendingUserRepository
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
+import org.mindrot.jbcrypt.BCrypt
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
+import kotlin.collections.forEach
+import kotlin.collections.ifEmpty
 
 @Service
 class EmailVerificationService(
     private val userRepository: UserRepository,
     private val pendingUserRepository: PendingUserRepository,
     private val emailService: EmailService,
+    private val identityRepository: UserIdentityRepository,
 ) {
     companion object {
         private const val VERIFICATION_CODE_EXPIRATION_HOURS = 24L
@@ -26,16 +36,34 @@ class EmailVerificationService(
      * @param email 사용자 이메일 주소
      * @param name 사용자 이름
      * @param passwordHash 해시된 비밀번호
-     * @throws SignUpEmailConflictException 이메일이 users 또는 pending_users에 이미 존재하는 경우
+     * @throws EmailAccountAlreadyExistsException 이메일이 users 또는 pending_users에 이미 존재하는 경우
      */
     fun createPendingUser(
         email: String,
         name: String,
-        passwordHash: String,
+        password: String,
     ) {
+        validateEmail(email)
+        validateName(name)
+        validatePassword(password)
+
+        val passwordHash = BCrypt.hashpw(password, BCrypt.gensalt())
         // Check if email already exists in users or pending_users
-        if (userRepository.existsByEmail(email) || pendingUserRepository.existsByEmail(email)) {
-            throw SignUpEmailConflictException()
+        if (pendingUserRepository.existsByEmail(email)) {
+            throw EmailAccountAlreadyExistsException()
+        }
+
+        userRepository.findByEmail(email)?.let { user ->
+            identityRepository
+                .findByUserId(user.id!!)
+                .ifEmpty {
+                    throw EmailAccountAlreadyExistsException()
+                }.forEach { identity ->
+                    when (identity.provider) {
+                        SocialProvider.GOOGLE.name -> throw GoogleAccountAlreadyExistsException()
+                    }
+                }
+            throw EmailAccountAlreadyExistsException()
         }
 
         // Generate verification code
@@ -129,4 +157,29 @@ class EmailVerificationService(
      * Generates a random verification code
      */
     private fun generateVerificationCode(): String = UUID.randomUUID().toString()
+
+    private fun validateEmail(email: String) {
+        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
+        if (!email.matches(emailRegex)) {
+            throw SignUpBadEmailException()
+        }
+    }
+
+    private fun validateName(name: String) {
+        if (name.isBlank()) {
+            throw SignUpBadNameException()
+        }
+    }
+
+    private fun validatePassword(password: String) {
+        if (password.length < 8) {
+            throw SignUpBadPasswordException("Password must be at least 8 characters")
+        }
+        if (!password.any { it.isLetter() }) {
+            throw SignUpBadPasswordException("Password must contain at least one letter")
+        }
+        if (!password.any { it.isDigit() }) {
+            throw SignUpBadPasswordException("Password must contain at least one number")
+        }
+    }
 }
