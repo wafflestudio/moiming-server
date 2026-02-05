@@ -1,6 +1,6 @@
 package com.wafflestudio.spring2025.domain.auth.external.client
 
-import com.wafflestudio.spring2025.domain.auth.AuthenticateException
+import com.wafflestudio.spring2025.domain.auth.exception.GoogleOAuthException
 import com.wafflestudio.spring2025.domain.auth.external.dto.GoogleUserInfoResponse
 import com.wafflestudio.spring2025.domain.auth.external.dto.OAuthUserInfo
 import com.wafflestudio.spring2025.domain.auth.external.dto.TokenExchangeResponse
@@ -56,7 +56,7 @@ class GoogleOAuthClient(
                                 it.statusCode().value(),
                                 errorBody,
                             )
-                            AuthenticateException()
+                            throw GoogleOAuthException()
                         }
                     }.awaitBody<TokenExchangeResponse>()
             logger.info("OAuth token exchange success: provider={}", provider)
@@ -69,7 +69,7 @@ class GoogleOAuthClient(
                 e.statusCode.value(),
                 e.message,
             )
-            throw AuthenticateException()
+            throw GoogleOAuthException()
         } catch (e: Exception) {
             logger.warn(
                 "OAuth token exchange unexpected error: provider={}, type={}, message={}",
@@ -77,7 +77,7 @@ class GoogleOAuthClient(
                 e.javaClass.simpleName,
                 e.message,
             )
-            throw AuthenticateException()
+            throw GoogleOAuthException()
         }
     }
 
@@ -97,11 +97,11 @@ class GoogleOAuthClient(
                             it.statusCode().value(),
                             errorBody,
                         )
-                        AuthenticateException()
+                        GoogleOAuthException()
                     }
                 }.awaitBody<GoogleUserInfoResponse>()
         } catch (e: Exception) {
-            throw AuthenticateException()
+            throw GoogleOAuthException()
         }
     }
 

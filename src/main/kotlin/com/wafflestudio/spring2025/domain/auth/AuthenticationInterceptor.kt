@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.auth
 
+import com.wafflestudio.spring2025.domain.auth.exception.AuthenticationRequiredException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
@@ -30,6 +31,6 @@ class AuthenticationInterceptor : HandlerInterceptor {
         val userId = request.getAttribute("userId")
         if (userId != null) return true
 
-        throw AuthenticateRequiredException()
+        throw AuthenticationRequiredException()
     }
 }

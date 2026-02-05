@@ -1,7 +1,7 @@
 package com.wafflestudio.spring2025.domain.user.service
 
 import com.wafflestudio.spring2025.config.AwsS3Properties
-import com.wafflestudio.spring2025.domain.auth.AuthenticateException
+import com.wafflestudio.spring2025.domain.auth.exception.AuthenticationRequiredException
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
@@ -25,7 +25,7 @@ class UserService(
     private val s3Props: AwsS3Properties,
 ) {
     fun me(user: User?): UserDto {
-        if (user == null) throw AuthenticateException()
+        if (user == null) throw AuthenticationRequiredException()
 
         val presignedUrl = user.profileImage?.let { key -> presignedGetUrl(key) }
 
@@ -41,7 +41,7 @@ class UserService(
         user: User?,
         image: MultipartFile,
     ) {
-        if (user == null) throw AuthenticateException()
+        if (user == null) throw AuthenticationRequiredException()
         validateProfileImage(image)
 
         val ext = extractExtension(image.originalFilename)
@@ -68,7 +68,7 @@ class UserService(
     }
 
     fun deleteProfileImage(user: User?) {
-        if (user == null) throw AuthenticateException()
+        if (user == null) throw AuthenticationRequiredException()
 
         // (선택) S3에서도 삭제
         user.profileImage?.let { key ->

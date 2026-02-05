@@ -1,6 +1,5 @@
 package com.wafflestudio.spring2025.domain.auth
 
-import com.wafflestudio.spring2025.domain.auth.AuthenticateException
 import com.wafflestudio.spring2025.domain.auth.service.JwtBlacklistService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest

@@ -1,12 +1,13 @@
 package com.wafflestudio.spring2025.domain.registration.controller
 
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
-import com.wafflestudio.spring2025.domain.registration.RegistrationInvalidStatusException
 import com.wafflestudio.spring2025.domain.registration.dto.GetRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.PatchRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.UpdateRegistrationStatusRequest
+import com.wafflestudio.spring2025.domain.registration.exception.RegistrationErrorCode
+import com.wafflestudio.spring2025.domain.registration.exception.RegistrationValidationException
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
-import com.wafflestudio.spring2025.domain.user.identity.UserIdentityNotFoundException
+import com.wafflestudio.spring2025.domain.user.identity.exception.UserIdentityNotFoundException
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -37,7 +38,7 @@ class RegistrationController(
         @LoggedInUser user: User,
     ): ResponseEntity<PatchRegistrationResponse> {
         val userId = user.id ?: throw UserIdentityNotFoundException()
-        val status = request.status ?: throw RegistrationInvalidStatusException()
+        val status = request.status ?: throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_INVALID_STATUS)
         val response = registrationService.updateStatus(userId, registrationId, status)
 
         return ResponseEntity.ok(response)
