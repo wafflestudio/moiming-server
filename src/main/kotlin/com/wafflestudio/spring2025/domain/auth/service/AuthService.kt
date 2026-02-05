@@ -1,10 +1,9 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
-import com.wafflestudio.spring2025.domain.auth.AuthenticateException
+import com.wafflestudio.spring2025.domain.auth.exception.AuthErrorCode
+import com.wafflestudio.spring2025.domain.auth.exception.AuthValidationException
+import com.wafflestudio.spring2025.domain.auth.exception.AuthenticationFailedException
 import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
-import com.wafflestudio.spring2025.domain.auth.SignUpBadEmailException
-import com.wafflestudio.spring2025.domain.auth.SignUpBadNameException
-import com.wafflestudio.spring2025.domain.auth.SignUpBadPasswordException
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
 import com.wafflestudio.spring2025.domain.user.identity.repository.UserIdentityRepository
 import com.wafflestudio.spring2025.domain.user.model.User
@@ -23,9 +22,9 @@ class AuthService(
         email: String,
         password: String,
     ): String {
-        val user: User = userRepository.findByEmail(email) ?: throw AuthenticateException()
+        val user: User = userRepository.findByEmail(email) ?: throw AuthenticationFailedException()
         if (BCrypt.checkpw(password, user.passwordHash).not()) {
-            throw AuthenticateException()
+            throw AuthenticationFailedException()
         }
         val accessToken = jwtTokenProvider.createToken(user.id!!)
         return accessToken
@@ -65,25 +64,25 @@ class AuthService(
     private fun validateEmail(email: String) {
         val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
         if (!email.matches(emailRegex)) {
-            throw SignUpBadEmailException()
+            throw AuthValidationException(AuthErrorCode.BAD_EMAIL)
         }
     }
 
     private fun validateName(name: String) {
         if (name.isBlank()) {
-            throw SignUpBadNameException()
+            throw AuthValidationException(AuthErrorCode.BAD_NAME)
         }
     }
 
     private fun validatePassword(password: String) {
         if (password.length < 8) {
-            throw SignUpBadPasswordException("Password must be at least 8 characters")
+            throw AuthValidationException(AuthErrorCode.BAD_PASSWORD)
         }
         if (!password.any { it.isLetter() }) {
-            throw SignUpBadPasswordException("Password must contain at least one letter")
+            throw AuthValidationException(AuthErrorCode.BAD_PASSWORD)
         }
         if (!password.any { it.isDigit() }) {
-            throw SignUpBadPasswordException("Password must contain at least one number")
+            throw AuthValidationException(AuthErrorCode.BAD_PASSWORD)
         }
     }
 }

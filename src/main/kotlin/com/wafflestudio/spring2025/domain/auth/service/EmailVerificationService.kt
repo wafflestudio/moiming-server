@@ -1,12 +1,9 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
 import com.wafflestudio.spring2025.common.email.service.EmailService
-import com.wafflestudio.spring2025.domain.auth.EmailAccountAlreadyExistsException
-import com.wafflestudio.spring2025.domain.auth.GoogleAccountAlreadyExistsException
-import com.wafflestudio.spring2025.domain.auth.InvalidVerificationCodeException
-import com.wafflestudio.spring2025.domain.auth.SignUpBadEmailException
-import com.wafflestudio.spring2025.domain.auth.SignUpBadNameException
-import com.wafflestudio.spring2025.domain.auth.SignUpBadPasswordException
+import com.wafflestudio.spring2025.domain.auth.exception.AccountAlreadyExistsException
+import com.wafflestudio.spring2025.domain.auth.exception.AuthErrorCode
+import com.wafflestudio.spring2025.domain.auth.exception.AuthValidationException
 import com.wafflestudio.spring2025.domain.auth.model.SocialProvider
 import com.wafflestudio.spring2025.domain.user.identity.repository.UserIdentityRepository
 import com.wafflestudio.spring2025.domain.user.model.PendingUser
@@ -50,20 +47,20 @@ class EmailVerificationService(
         val passwordHash = BCrypt.hashpw(password, BCrypt.gensalt())
         // Check if email already exists in users or pending_users
         if (pendingUserRepository.existsByEmail(email)) {
-            throw EmailAccountAlreadyExistsException()
+            throw AccountAlreadyExistsException(AuthErrorCode.EMAIL_ACCOUNT_ALREADY_EXIST)
         }
 
         userRepository.findByEmail(email)?.let { user ->
             identityRepository
                 .findByUserId(user.id!!)
                 .ifEmpty {
-                    throw EmailAccountAlreadyExistsException()
+                    throw AccountAlreadyExistsException(AuthErrorCode.EMAIL_ACCOUNT_ALREADY_EXIST)
                 }.forEach { identity ->
                     when (identity.provider) {
-                        SocialProvider.GOOGLE.name -> throw GoogleAccountAlreadyExistsException()
+                        SocialProvider.GOOGLE.name -> throw AccountAlreadyExistsException(AuthErrorCode.GOOGLE_ACCOUNT_ALREADY_EXIST)
                     }
                 }
-            throw EmailAccountAlreadyExistsException()
+            throw AccountAlreadyExistsException(AuthErrorCode.EMAIL_ACCOUNT_ALREADY_EXIST)
         }
 
         // Generate verification code
@@ -98,12 +95,12 @@ class EmailVerificationService(
         // Find pending user by verification code
         val pendingUser =
             pendingUserRepository.findByVerificationCode(code)
-                ?: throw InvalidVerificationCodeException()
+                ?: throw AuthValidationException(AuthErrorCode.INVALID_VERIFICATION_CODE)
 
         // Check if code has expired
         if (Instant.now().isAfter(pendingUser.expiresAt)) {
             pendingUserRepository.delete(pendingUser)
-            throw InvalidVerificationCodeException()
+            throw AuthValidationException(AuthErrorCode.INVALID_VERIFICATION_CODE)
         }
 
         // Create actual user
@@ -130,7 +127,7 @@ class EmailVerificationService(
     fun resendVerificationEmail(email: String) {
         val pendingUser =
             pendingUserRepository.findByEmail(email)
-                ?: throw InvalidVerificationCodeException()
+                ?: throw AuthValidationException(AuthErrorCode.INVALID_VERIFICATION_CODE)
 
         // Generate new verification code
         val newCode = generateVerificationCode()
@@ -161,25 +158,25 @@ class EmailVerificationService(
     private fun validateEmail(email: String) {
         val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
         if (!email.matches(emailRegex)) {
-            throw SignUpBadEmailException()
+            throw AuthValidationException(AuthErrorCode.BAD_EMAIL)
         }
     }
 
     private fun validateName(name: String) {
         if (name.isBlank()) {
-            throw SignUpBadNameException()
+            throw AuthValidationException(AuthErrorCode.BAD_NAME)
         }
     }
 
     private fun validatePassword(password: String) {
         if (password.length < 8) {
-            throw SignUpBadPasswordException("Password must be at least 8 characters")
+            throw AuthValidationException(AuthErrorCode.BAD_PASSWORD)
         }
         if (!password.any { it.isLetter() }) {
-            throw SignUpBadPasswordException("Password must contain at least one letter")
+            throw AuthValidationException(AuthErrorCode.BAD_PASSWORD)
         }
         if (!password.any { it.isDigit() }) {
-            throw SignUpBadPasswordException("Password must contain at least one number")
+            throw AuthValidationException(AuthErrorCode.BAD_PASSWORD)
         }
     }
 }

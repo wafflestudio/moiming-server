@@ -84,7 +84,7 @@ class EventService(
 
         val creatorUser =
             userRepository.findById(event.createdBy).orElseThrow {
-                EventNotFoundException(publicId)
+                EventNotFoundException()
             }
 
         val myReg =
@@ -336,14 +336,14 @@ class EventService(
 
     private fun getEventByPublicId(publicId: String): Event =
         eventRepository.findByPublicId(publicId)
-            ?: throw EventNotFoundException(publicId)
+            ?: throw EventNotFoundException()
 
     private fun requireCreator(
         event: Event,
         requesterId: Long,
     ) {
         if (event.createdBy != requesterId) {
-            throw EventForbiddenException(requesterId)
+            throw EventForbiddenException()
         }
     }
 
@@ -371,21 +371,21 @@ class EventService(
             registrationEndsAt != null &&
             registrationStartsAt.isAfter(registrationEndsAt)
         ) {
-            throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_BEFORE_STARTS)
         }
 
         if (registrationEndsAt != null &&
             startsAt != null &&
             registrationEndsAt.isAfter(startsAt)
         ) {
-            throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
         }
 
         if (registrationStartsAt != null &&
             startsAt != null &&
             registrationStartsAt.isAfter(startsAt)
         ) {
-            throw EventValidationException(EventErrorCode.EVENT_REGISTRATION_WINDOW_INVALID)
+            throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_AFTER_EVENT_START)
         }
     }
 

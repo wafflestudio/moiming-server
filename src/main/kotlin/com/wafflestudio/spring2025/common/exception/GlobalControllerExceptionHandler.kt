@@ -10,5 +10,9 @@ class GlobalControllerExceptionHandler {
     fun handle(exception: DomainException): ResponseEntity<Map<String, Any>> =
         ResponseEntity
             .status(exception.httpErrorCode)
-            .body(mapOf("error" to exception.msg, "errorCode" to exception.errorCode))
+            .body(mapOf(
+                "code" to exception.code.name,
+                "title" to exception.title,
+                "message" to exception.msg
+            ))
 }
