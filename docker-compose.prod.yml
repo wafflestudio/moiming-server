@@ -24,7 +24,7 @@ services:
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_FROM_ADDRESS: picokosmos@gmail.com
       EMAIL_FROM_NAME: 모이샤
-      EMAIL_SERVICE_DOMAIN: https://d3e23xs1dwlmd7.cloudfront.net/
+      EMAIL_SERVICE_DOMAIN: https://www.moiming.app
       CORS_ALLOWED_ORIGINS: https://www.moiming.app,https://moiming.app
     depends_on:
       mysql:

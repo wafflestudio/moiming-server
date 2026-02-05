@@ -24,7 +24,7 @@ class EmailService(
         toEmail: String,
         verificationCode: String,
     ) {
-        val verificationUrl = "${emailConfig.serviceDomain}/verify?code=$verificationCode"
+        val verificationUrl = "${emailConfig.serviceDomain}/auth/verify?verificationCode=$verificationCode"
         val htmlContent =
             loadTemplate("email-verification.html")
                 .replace("{verificationUrl}", verificationUrl)
