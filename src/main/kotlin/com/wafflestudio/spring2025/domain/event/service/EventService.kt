@@ -102,7 +102,6 @@ class EventService(
                 .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
                 .toInt()
 
-<<<<<<< HEAD
         val waitlistedCount =
             registrationRepository
                 .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.WAITLISTED)
@@ -113,11 +112,6 @@ class EventService(
         val waitlistPosition: Int? =
             if (myReg?.status == RegistrationStatus.WAITLISTED) {
                 val waitlistedRegs =
-=======
-        val waitingNum: Int? =
-            if (myRegistration?.status == RegistrationStatus.WAITLISTED) {
-                val waitings =
->>>>>>> main
                     registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(
                         eventID = eventId,
                         registrationStatus = RegistrationStatus.WAITLISTED,
