@@ -26,15 +26,15 @@ data class EventSummaryDto(
     @Schema(description = "장소")
     val location: String?,
     @Schema(description = "시작 시간 (epoch milliseconds)")
-    val startAt: Long?,
+    val startsAt: Long?,
     @Schema(description = "종료 시간 (epoch milliseconds)")
-    val endAt: Long?,
+    val endsAt: Long?,
 ) {
     constructor(event: Event) : this(
         id = event.id!!,
         title = event.title,
         location = event.location,
-        startAt = event.startAt?.toEpochMilli(),
-        endAt = event.endAt?.toEpochMilli(),
+        startsAt = event.startsAt?.toEpochMilli(),
+        endsAt = event.endsAt?.toEpochMilli(),
     )
 }
