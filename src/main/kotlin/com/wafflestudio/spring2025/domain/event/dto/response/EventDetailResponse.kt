@@ -27,21 +27,16 @@ data class EventInfo(
     val description: String?,
     @Schema(description = "장소", example = "서울대", nullable = true)
     val location: String?,
-
     @Schema(description = "시작 시간 (ISO-8601)", example = "2026-02-02T18:00:00Z", nullable = true)
     val startsAt: Instant?,
-
     @Schema(description = "종료 시간 (ISO-8601)", example = "2026-02-02T20:00:00Z", nullable = true)
     val endsAt: Instant?,
-
     @Schema(description = "정원", example = "10", nullable = true)
     val capacity: Int?,
     @Schema(description = "총 신청자 수(확정+대기 등)", example = "8")
     val totalApplicants: Int,
-
     @Schema(description = "신청 시작 시간 (ISO-8601)", example = "2026-02-02T17:00:00Z", nullable = true)
     val registrationStartsAt: Instant?,
-
     @Schema(description = "신청 마감 시간 (ISO-8601)", example = "2026-02-02T17:00:00Z", nullable = true)
     val registrationEndsAt: Instant?,
 )
@@ -87,14 +82,10 @@ data class ViewerInfo(
 data class CapabilitiesInfo(
     @Schema(description = "공유 링크 가능 여부", example = "false")
     val shareLink: Boolean,
-
     @Schema(description = "참여 신청 가능 여부(확정 자리 신청)", example = "false")
     val apply: Boolean,
-
     @Schema(description = "대기 신청 가능 여부(정원 찼을 때)", example = "false")
     val wait: Boolean,
-
     @Schema(description = "신청 취소 가능 여부", example = "true")
     val cancel: Boolean,
 )
-

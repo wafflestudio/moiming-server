@@ -57,13 +57,13 @@ class EventController(
     @Operation(summary = "이벤트 상세 조회", description = "이벤트 상세 정보를 조회합니다")
     @GetMapping("/{publicId}") // GET /api/events/{publicId}
     fun getById(
-        @LoggedInUser user: User?,   // nullable
+        @LoggedInUser user: User?, // nullable
         @PathVariable publicId: String,
     ): ResponseEntity<EventDetailResponse> {
         val response =
             eventService.getDetail(
                 publicId = publicId,
-                requesterId = user?.id,   // Long?
+                requesterId = user?.id, // Long?
             )
         return ResponseEntity.ok(response)
     }

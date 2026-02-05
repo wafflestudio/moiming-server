@@ -331,7 +331,10 @@ class EventService(
         eventRepository.findByPublicId(publicId)
             ?: throw EventNotFoundException(publicId)
 
-    private fun requireCreator(event: Event, requesterId: Long) {
+    private fun requireCreator(
+        event: Event,
+        requesterId: Long,
+    ) {
         if (event.createdBy != requesterId) {
             throw EventForbiddenException(requesterId)
         }
@@ -382,7 +385,6 @@ class EventService(
     private fun buildCapabilities(
         viewerStatus: ViewerStatus,
         capacity: Int?,
-        hostCount: Int,
         confirmedCount: Int,
         waitlistEnabled: Boolean,
         registrationStartsAt: Instant?,
@@ -391,19 +393,23 @@ class EventService(
     ): CapabilitiesInfo {
         val withinWindow =
             (registrationStartsAt?.let { !now.isBefore(it) } ?: true) &&
-                    (registrationEndsAt?.let { !now.isAfter(it) } ?: true)
+                (registrationEndsAt?.let { !now.isAfter(it) } ?: true)
 
         val isFull =
-            capacity != null && (hostCount + confirmedCount) >= capacity
+            capacity != null && confirmedCount >= capacity
 
-        val canApplyNow =
-            withinWindow && (!isFull || waitlistEnabled)
+        // 확정 자리 신청 가능
+        val canApply = withinWindow && !isFull
+
+        // 대기 신청 가능: 정원 찼고 + 대기 허용
+        val canWait = withinWindow && isFull && waitlistEnabled
 
         return when (viewerStatus) {
             ViewerStatus.HOST ->
                 CapabilitiesInfo(
                     shareLink = true,
                     apply = false,
+                    wait = false,
                     cancel = false,
                 )
 
@@ -411,13 +417,15 @@ class EventService(
                 CapabilitiesInfo(
                     shareLink = false,
                     apply = false,
+                    wait = false,
                     cancel = true,
                 )
 
             ViewerStatus.CANCELED, ViewerStatus.NONE ->
                 CapabilitiesInfo(
                     shareLink = false,
-                    apply = canApplyNow,
+                    apply = canApply,
+                    wait = canWait,
                     cancel = false,
                 )
 
@@ -425,6 +433,7 @@ class EventService(
                 CapabilitiesInfo(
                     shareLink = false,
                     apply = false,
+                    wait = false,
                     cancel = false,
                 )
         }
