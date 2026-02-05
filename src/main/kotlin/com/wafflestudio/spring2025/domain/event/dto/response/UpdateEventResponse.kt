@@ -7,12 +7,12 @@ data class UpdateEventResponse(
     val title: String,
     val description: String?,
     val location: String?,
-    val startAt: Instant?,
-    val endAt: Instant?,
+    val startsAt: Instant?,
+    val endsAt: Instant?,
     val capacity: Int?,
     val waitlistEnabled: Boolean,
-    val registrationStart: Instant?,
-    val registrationDeadline: Instant?,
+    val registrationStartsAt: Instant?,
+    val registrationEndsAt: Instant?,
 ) {
     companion object {
         fun from(event: Event): UpdateEventResponse =
@@ -20,12 +20,12 @@ data class UpdateEventResponse(
                 title = event.title,
                 description = event.description,
                 location = event.location,
-                startAt = event.startAt,
-                endAt = event.endAt,
+                startsAt = event.startsAt,
+                endsAt = event.endsAt,
                 capacity = event.capacity,
                 waitlistEnabled = event.waitlistEnabled,
-                registrationStart = event.registrationStart,
-                registrationDeadline = event.registrationDeadline,
+                registrationStartsAt = event.registrationStartsAt,
+                registrationEndsAt = event.registrationEndsAt,
             )
     }
 }

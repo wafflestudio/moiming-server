@@ -15,12 +15,12 @@ data class CreateEventRequest(
         description = "시작 시간 (ISO-8601)",
         example = "2026-02-02T18:00:00Z",
     )
-    val startAt: Instant? = null,
+    val startsAt: Instant? = null,
     @Schema(
         description = "종료 시간 (ISO-8601)",
         example = "2026-02-02T20:00:00Z",
     )
-    val endAt: Instant? = null,
+    val endsAt: Instant? = null,
     @Schema(description = "정원", example = "30")
     val capacity: Int? = null,
     @Schema(description = "대기 명단 사용 여부", example = "true")
@@ -29,10 +29,10 @@ data class CreateEventRequest(
         description = "신청 시작 시간 (ISO-8601)",
         example = "2026-02-02T17:00:00Z",
     )
-    val registrationStart: Instant? = null,
+    val registrationStartsAt: Instant? = null,
     @Schema(
         description = "신청 마감 시간 (ISO-8601)",
         example = "2026-02-02T17:30:00Z",
     )
-    val registrationDeadline: Instant? = null,
+    val registrationEndsAt: Instant? = null,
 )

@@ -17,7 +17,7 @@ CREATE TABLE events (
     updated_at DATETIME(6) NOT NULL,
 
     PRIMARY KEY (id),
-    UNIQUE KEY ux_events_public_id (public_id),
+    UNIQUE KEY uk_events_public_id (public_id),
 
     CONSTRAINT fk_events_user
         FOREIGN KEY (created_by) REFERENCES users(id)
