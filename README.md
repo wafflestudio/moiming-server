@@ -1,36 +1,86 @@
-# 23-5-team4-server
+# Moiming - 일정 관리 및 참가 신청 플랫폼
 
-와플스튜디오 23.5기 4조 server
+> 이벤트를 생성하고, 참가 신청을 받고, 대기열까지 관리하는 올인원 일정 관리 API 서버
 
-## 협업 규칙
+## 주요 기능
 
-### 작업 프로세스
+- **이벤트 관리** - 이벤트 생성/수정/삭제, 정원 설정, 신청 기간 설정, 대기열 지원
+- **참가 신청** - 참가 확정/대기/취소/차단 상태 관리, 게스트(비회원) 신청 지원, 대기열 자동 승격
+- **인증** - 이메일/비밀번호 회원가입(이메일 인증), Google OAuth 2.0, JWT 기반 세션
+- **알림** - 신청 확인/대기열 승격 등 상태 변경 시 이메일 발송
+- **프로필** - 프로필 이미지 업로드 (AWS S3)
 
-1. **이슈 생성**: Github에서 이슈를 생성
-2. **이슈 공유**: 슬랙에 이슈 링크 공유
-3. **브랜치 생성**: 이슈와 연결된 브랜치 생성
-4. **작업 완료**: 해당 이슈에 대응되는 작업 완료
-5. **PR 생성**: Pull Request 생성
-6. **리뷰 요청**: PR 링크를 슬랙에 공유하며 리뷰어 태그해 리뷰 요청
-7. **코드 리뷰 및 병합**: 리뷰어는 코드 리뷰 후 메인에 머지
+## 기술 스택
 
-### Github Flow
+| 분류 | 기술 |
+|------|------|
+| Language | Kotlin 1.9 |
+| Framework | Spring Boot 3.5 |
+| Database | MySQL 8.4, Redis 7 |
+| ORM | Spring Data JDBC |
+| Auth | JWT (JJWT), BCrypt, Google OAuth 2.0 |
+| Storage | AWS S3 |
+| Migration | Flyway |
+| Docs | SpringDoc OpenAPI (Swagger) |
+| CI/CD | GitHub Actions, Docker, Docker Compose |
+| Infra | EC2, Kubernetes (manifests) |
 
-- fork 없이 메인 레포를 바로 clone해서 작업 후 push
-- 브랜치 전략:
-  - `main`
-    - `feat/name` - 새로운 기능 개발
-    - `hotfix/name` - 긴급 버그 수정
-    - `ref/name` - 리팩토링
-- PR을 병합할 때는 스쿼시 후 병합
+## 프로젝트 구조
 
-### 커밋 메시지
+```
+src/main/kotlin/com/wafflestudio/spring2025/
+├── config/              # 설정 (Web, DB, Redis, S3, Swagger 등)
+├── common/
+│   ├── exception/       # 글로벌 예외 처리
+│   └── email/           # 이메일 발송 서비스
+└── domain/
+    ├── auth/            # 인증/인가 (로그인, 회원가입, OAuth)
+    ├── user/            # 사용자 프로필 관리
+    ├── event/           # 이벤트 CRUD
+    └── registration/    # 참가 신청 및 대기열 관리
+```
 
-- `gitmoji` 사용 - 이모지를 커밋메시지 가장 앞에 사용
-- 예시: `✨ Add a landing page`
+## 시작하기
 
-**IntelliJ 사용자:**
-- "Gitmoji Plus Commit Button" 플러그인 설치
-  1. `Settings/Preferences` → `Plugins`
-  2. Marketplace에서 "Gitmoji Plus Commit Button" 검색 및 설치
-  3. 화면 좌측 상단 Commit 버튼 (혹은 cmd + 숫자0) -> gitmoji 플러그인 아이콘 클릭 후 이모지 선택, 커밋 메시지 작성, 커밋.
+### 사전 요구사항
+
+- JDK 17+
+- Docker & Docker Compose
+
+### 로컬 실행
+
+```bash
+# 저장소 클론
+git clone https://github.com/wafflestudio/23-5-team4-server.git
+cd 23-5-team4-server
+
+# 환경 변수 설정 (.env 파일 생성)
+cp .env.example .env  # 필요한 값 채워 넣기
+
+# Docker Compose로 실행
+docker compose up -d
+```
+
+### 빌드
+
+```bash
+./gradlew build
+```
+
+### 테스트
+
+```bash
+./gradlew test
+```
+
+## API 문서
+
+서버 실행 후 Swagger UI에서 확인할 수 있습니다:
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+## 기여 방법
+
+[CONTRIBUTING.md](./CONTRIBUTING.md)를 참고해주세요.
