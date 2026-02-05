@@ -60,3 +60,10 @@ class GoogleAccountAlreadyExistsException :
         httpStatusCode = HttpStatus.CONFLICT,
         msg = "Google account already exists",
     )
+
+class AuthenticateRequiredException :
+    AuthException(
+        errorCode = 1006,
+        httpStatusCode = HttpStatus.UNAUTHORIZED,
+        msg = "User needs to be logged in",
+    )

@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.user.controller
 
+import com.wafflestudio.spring2025.domain.auth.AuthRequired
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.user.dto.GetMeResponse
 import com.wafflestudio.spring2025.domain.user.model.User
@@ -32,6 +33,7 @@ class UserController(
             ApiResponse(responseCode = "401", description = "인증 실패 (유효하지 않은 토큰)"),
         ],
     )
+    @AuthRequired
     @GetMapping("/me")
     fun me(
         @Parameter(hidden = true) @LoggedInUser user: User?,
@@ -45,6 +47,7 @@ class UserController(
             ApiResponse(responseCode = "401", description = "인증 실패 (유효하지 않은 토큰)"),
         ],
     )
+    @AuthRequired
     @PutMapping(
         "/me/profile-image",
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
@@ -64,6 +67,7 @@ class UserController(
             ApiResponse(responseCode = "401", description = "인증 실패 (유효하지 않은 토큰)"),
         ],
     )
+    @AuthRequired
     @DeleteMapping("/me/profile-image")
     fun deleteProfileImage(
         @Parameter(hidden = true) @LoggedInUser user: User?,
