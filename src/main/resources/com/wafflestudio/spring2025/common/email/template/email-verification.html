@@ -1,49 +1,71 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
     <title>이메일 인증</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+
+<body
+    style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+        style="max-width: 450px; margin: 0 auto; background-color: #ffffff;">
         <tr>
-            <td align="center" style="padding: 40px 0;">
-                <table role="presentation" style="width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <!-- Header -->
-                    <tr>
-                        <td style="padding: 40px 40px 20px; text-align: center;">
-                            <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #333333;">모이샤</h1>
-                        </td>
-                    </tr>
+            <td style="padding: 30px 20px;">
 
-                    <!-- Content -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
                     <tr>
-                        <td style="padding: 20px 40px 40px; text-align: center;">
-                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #666666;">
-                                모이샤 가입을 환영합니다!<br>
-                                아래 버튼을 눌러 가입을 완료하고,<br>
-                                간편한 행사 관리를 시작해 보세요.
-                            </p>
-
-                            <!-- Button -->
-                            <a href="{verificationUrl}" style="display: inline-block; padding: 14px 40px; background-color: #4F46E5; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600;">
-                                이메일 인증하기
-                            </a>
-                        </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                        <td style="padding: 20px 40px 40px; text-align: center; border-top: 1px solid #eeeeee;">
-                            <p style="margin: 0; font-size: 14px; color: #999999;">
-                                본인이 요청하지 않은 경우, 이 메일을 무시하셔도 됩니다.
-                            </p>
+                        <td>
+                            <img src="https://raw.githubusercontent.com/wafflestudio/moiming-web/refs/heads/main/public/moiming-logo.svg"
+                                alt="모이밍" width="120" style="display: block; border: 0;">
                         </td>
                     </tr>
                 </table>
+
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
+                    <tr>
+                        <td width="48" style="vertical-align: middle;">
+                            <div
+                                style="width: 48px; height: 48px; background-color: #2196F3; border-radius: 50%; text-align: center;">
+                                <table border="0" cellpadding="3" cellspacing="0" width="48" height="48">
+                                    <tr>
+                                        <td align="center" valign="middle" height="48" style="height: 48px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="#E3F2FD" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round"
+                                                class="lucide lucide-mail-question-mark-icon lucide-mail-question-mark">
+                                                <path
+                                                    d="M22 10.5V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h12.5" />
+                                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                                <path
+                                                    d="M18 15.28c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.4.5.8.5 1.3 0 1.3-2 2-2 2" />
+                                                <path d="M20 22v.01" />
+                                            </svg>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                        <td
+                            style="padding-left: 15px; font-size: 22px; font-weight: bold; line-height: 1.3; color: #111;">
+                            메일 인증을 완료해주세요.
+                        </td>
+                    </tr>
+                </table>
+
+                <div
+                    style="font-size: 16px; line-height: 1.7; color: #333; margin-bottom: 50px; white-space: wrap; word-break: break-all;">
+                    모이밍을 이용해 주셔서 감사합니다.<br>
+                    아래 버튼을 눌러 회원가입을 완료하고,<br>
+                    간편한 모임 관리를 시작해 보세요.</div>
+
+                <a href="{verificationUrl}"
+                    style="display: inline-block; width: 100%; padding: 18px 0; background-color: #2196F3; border-radius: 10px; color: #ffffff; font-size: 17px; font-weight: bold; text-align: center; text-decoration: none;">
+                    메일 인증하기
+                </a>
             </td>
         </tr>
     </table>
 </body>
+
 </html>
