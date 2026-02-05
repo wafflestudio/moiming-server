@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.event.controller
 
+import com.wafflestudio.spring2025.domain.auth.AuthRequired
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.event.dto.request.CreateEventRequest
 import com.wafflestudio.spring2025.domain.event.dto.request.UpdateEventRequest
@@ -26,6 +27,7 @@ import java.net.URI
 class EventController(
     private val eventService: EventService,
 ) {
+    @AuthRequired
     @Operation(summary = "이벤트 생성", description = "새로운 이벤트를 생성합니다")
     @PostMapping // POST /api/events
     fun create(
@@ -65,6 +67,7 @@ class EventController(
         return ResponseEntity.ok(response)
     }
 
+    @AuthRequired
     @Operation(summary = "이벤트 수정", description = "이벤트를 수정합니다")
     @PutMapping("/{publicId}") // PUT /api/events/{publicId}
     fun update(
@@ -91,6 +94,7 @@ class EventController(
         return ResponseEntity.ok(response)
     }
 
+    @AuthRequired
     @Operation(summary = "이벤트 삭제", description = "이벤트를 삭제합니다")
     @DeleteMapping("/{publicId}") // DELETE /api/events/{publicId}
     fun delete(
