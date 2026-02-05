@@ -1,83 +1,131 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <title>모이밍 - 신청 완료</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; -webkit-font-smoothing: antialiased;">
-<div style="width: 100%; max-width: 450px; margin: 0 auto; padding: 30px 20px; box-sizing: border-box;">
 
-    <div style="margin-bottom: 30px;">
-        <img src="https://raw.githubusercontent.com/wafflestudio/moiming-web/refs/heads/main/public/moiming-logo.svg" alt="모이밍" style="height: 32px; display: block; border: 0;">
-    </div>
+<body
+    style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; -webkit-font-smoothing: antialiased;">
+    <div style="width: 100%; max-width: 450px; margin: 0 auto; padding: 30px 20px; box-sizing: border-box;">
 
-    <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 30px; width: 100%;">
-        <tr>
-            <td style="width: 48px; vertical-align: middle;">
-                <img src="https://your-domain.com/images/check_icon_blue.png" alt="Success" style="width: 48px; height: 48px; display: block;">
-            </td>
-            <td style="padding-left: 15px; font-size: 22px; font-weight: bold; line-height: 1.3; color: #111;">
-                안녕하세요 {name}님<br>
-                신청이 완료되었습니다.
-            </td>
-        </tr>
-    </table>
+        <div style="margin-bottom: 30px;">
+            <img src="https://raw.githubusercontent.com/wafflestudio/moiming-web/refs/heads/main/public/moiming-logo.svg"
+                alt="모이밍" style="height: 32px; display: block; border: 0;">
+        </div>
 
-    <div style="border: 1px solid #EAEAEA; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
-        <div style="font-size: 22px; font-weight: bold; color: #000; margin-bottom: 20px;">{eventTitle}</div>
-
-        <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; font-size: 16px; color: #666; line-height: 1.6;">
+        <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 30px; width: 100%;">
             <tr>
-                <td style="padding-bottom: 12px; vertical-align: middle; width: 20px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                <td width="48" style="vertical-align: middle;">
+                    <div
+                        style="width: 48px; height: 48px; background-color: #2196F3; border-radius: 50%; text-align: center;">
+                        <table border="0" cellpadding="3" cellspacing="0" width="48" height="48">
+                            <tr>
+                                <td align="center" valign="middle" height="48" style="height: 48px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="#E3F2FD" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="lucide lucide-check-icon lucide-check">
+                                        <path d="M20 6 9 17l-5-5" />
+                                    </svg>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </td>
-                <td style="padding-bottom: 12px; padding-left: 10px; vertical-align: middle;">
-                    일시 <span style="margin-left:8px; color:#444;">{startsAt}-{endsAt}</span>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding-bottom: 12px; vertical-align: middle;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-                </td>
-                <td style="padding-bottom: 12px; padding-left: 10px; vertical-align: middle;">
-                    장소 <span style="margin-left:8px; color:#444;">{location}</span>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding-bottom: 4px; vertical-align: middle;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </td>
-                <td style="padding-bottom: 4px; padding-left: 10px; vertical-align: middle;">
-                    정원 <span style="margin-left:8px; color:#444;">{confirmedCount}/{capacity}명</span>
+                <td style="padding-left: 15px; font-size: 22px; font-weight: bold; line-height: 1.3; color: #111;">
+                    안녕하세요 {name}님<br>
+                    신청이 완료되었습니다.
                 </td>
             </tr>
         </table>
-        <div style="text-align: right; color: #CCCCCC; font-size: 24px; line-height: 1; font-family: sans-serif; font-weight: 300; margin-top: -10px;">&rsaquo;</div>
+
+        <div style="border: 1px solid #EAEAEA; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
+            <div style="font-size: 22px; font-weight: bold; color: #000; margin-bottom: 20px;">{eventTitle}</div>
+
+            <table border="0" cellpadding="0" cellspacing="0"
+                style="width: 100%; font-size: 16px; color: #666; line-height: 1.6;">
+                <tr>
+                    <td style="padding-bottom: 12px; vertical-align: middle; width: 20px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="display: block;">
+                            <path d="M8 2v4" />
+                            <path d="M16 2v4" />
+                            <rect width="18" height="18" x="3" y="4" rx="2" />
+                            <path d="M3 10h18" />
+                        </svg>
+                    </td>
+                    <td style="padding-bottom: 12px; padding-left: 10px; vertical-align: middle;">
+                        일시 <span style="margin-left:8px; color:#444;">{startsAt}-{endsAt}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-bottom: 12px; vertical-align: middle;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="display: block;">
+                            <path
+                                d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                    </td>
+                    <td style="padding-bottom: 12px; padding-left: 10px; vertical-align: middle;">
+                        장소 <span style="margin-left:8px; color:#444;">{location}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-bottom: 4px; vertical-align: middle;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="display: block;">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </td>
+                    <td style="padding-bottom: 4px; padding-left: 10px; vertical-align: middle;">
+                        정원 <span style="margin-left:8px; color:#444;">{confirmedCount}/{capacity}명</span>
+                    </td>
+                </tr>
+            </table>
+            <div
+                style="text-align: right; color: #CCCCCC; font-size: 24px; line-height: 1; font-family: sans-serif; font-weight: 300; margin-top: -10px;">
+                &rsaquo;</div>
+        </div>
+
+        <table border="0" cellpadding="0" cellspacing="0"
+            style="width: 100%; background-color: #F7F8F9; border-radius: 8px; margin-bottom: 40px;">
+            <tr>
+                <td style="padding: 14px 16px; font-size: 15px; color: #444; vertical-align: middle;">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="vertical-align: middle; padding-right: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" style="display: block;">
+                                    <path d="M12 6v6l4 2" />
+                                    <circle cx="12" cy="12" r="10" />
+                                </svg>
+                            </td>
+                            <td style="vertical-align: middle; line-height: 1;">
+                                <strong style="font-weight: bold;">신청 기간:</strong>
+                                <span style="margin-left: 4px;">{registrationStartsAt}-{registrationEndsAt}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div
+            style="font-size: 16px; line-height: 1.7; color: #333; margin-bottom: 50px; white-space: wrap; word-break: break-all;">
+            {description}</div>
+
+        <a href="https://www.moiming.app/event/{publicId}?regId={registrationPublicId}"
+            style="display: block; width: 100%; padding: 18px 0; background-color: #FEE9E7; border: 1px solid #900B09; border-radius: 10px; color: #900B09; font-size: 17px; font-weight: 600; text-align: center; text-decoration: none;">
+            취소하기
+        </a>
     </div>
-
-    <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #F7F8F9; border-radius: 8px; margin-bottom: 40px;">
-        <tr>
-            <td style="padding: 14px 16px; font-size: 15px; color: #444; vertical-align: middle;">
-                <table border="0" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td style="vertical-align: middle; padding-right: 8px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>
-                        </td>
-                        <td style="vertical-align: middle; line-height: 1;">
-                            <strong style="font-weight: bold;">신청 기간:</strong>
-                            <span style="margin-left: 4px;">{registrationStartsAt}-{registrationEndsAt}</span>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-
-    <div style="font-size: 16px; line-height: 1.7; color: #333; margin-bottom: 50px; white-space: pre-wrap; word-break: break-all;">{description}</div>
-
-    <a href="https://www.moiming.app/event/{publicId}?regId={registrationPublicId}" style="display: block; width: 100%; padding: 18px 0; background-color: #FFF5F5; border: 1px solid #E57373; border-radius: 10px; color: #C62828; font-size: 17px; font-weight: bold; text-align: center; text-decoration: none;">
-        취소하기
-    </a>
-</div>
 </body>
+
 </html>
