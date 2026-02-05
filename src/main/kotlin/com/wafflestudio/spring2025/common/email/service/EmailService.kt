@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Service
 class EmailService(
@@ -59,60 +62,165 @@ class EmailService(
             throw IllegalStateException("Email template not found: $templateName", e)
         }
 
-    fun sendRegistrationStatusEmail(
-        toEmail: String,
-        eventTitle: String,
-        status: RegistrationStatus,
-        waitingNum: Int? = null,
-        // 신청 메일 템플릿이 확정됨에 따라 인자 수정 가능
-    ) {
-        when (status) {
+    data class RegistrationStatusEmailData(
+        val toEmail: String,
+        val status: RegistrationStatus,
+        val name: String,
+        val eventTitle: String,
+        val startsAt: Instant?,
+        val endsAt: Instant?,
+        val location: String?,
+        val confirmedCount: Int?,
+        val capacity: Int?,
+        val registrationStartsAt: Instant?,
+        val registrationEndsAt: Instant?,
+        val description: String?,
+        val publicId: String?,
+        val registrationPublicId: String?,
+        val waitingNum: Int? = null,
+    )
+
+    fun sendRegistrationStatusEmail(data: RegistrationStatusEmailData) {
+        when (data.status) {
             RegistrationStatus.CONFIRMED -> {
                 val htmlContent =
                     loadTemplate("registration-confirmed.html")
-                        .replace("{eventTitle}", eventTitle)
+                        .replace("{name}", data.name)
+                        .replace("{eventTitle}", data.eventTitle)
+                        .replace("{startsAt}", formatInstant(data.startsAt))
+                        .replace("{endsAt}", formatInstant(data.endsAt))
+                        .replace("{location}", data.location ?: "-")
+                        .replace("{confirmedCount}", data.confirmedCount?.toString() ?: "-")
+                        .replace("{capacity}", data.capacity?.toString() ?: "-")
+                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
+                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{description}", data.description ?: "-")
+                        .replace("{publicId}", data.publicId ?: "-")
+                        .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
                 emailClient.sendEmail(
-                    to = toEmail,
+                    to = data.toEmail,
                     subject = "모이샤 참여 신청 확정",
                     htmlContent = htmlContent,
                     fromEmail = emailConfig.fromEmail,
                     fromName = emailConfig.fromName,
                 )
 
-                logger.info("신청 확정 정보가 $toEmail 로 전달되었습니다.")
+                logger.info("신청 확정 정보가 ${data.toEmail} 로 전달되었습니다.")
             }
+
             RegistrationStatus.WAITLISTED -> {
                 val htmlContent =
                     loadTemplate("registration-waitlisted.html")
-                        .replace("{eventTitle}", eventTitle)
-                        .replace("{waitingNum}", waitingNum?.toString() ?: "-")
+                        .replace("{name}", data.name)
+                        .replace("{waitingNum}", data.waitingNum?.toString() ?: "-")
+                        .replace("{eventTitle}", data.eventTitle)
+                        .replace("{startsAt}", formatInstant(data.startsAt))
+                        .replace("{endsAt}", formatInstant(data.endsAt))
+                        .replace("{location}", data.location ?: "-")
+                        .replace("{confirmedCount}", data.confirmedCount?.toString() ?: "-")
+                        .replace("{capacity}", data.capacity?.toString() ?: "-")
+                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
+                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{description}", data.description ?: "-")
+                        .replace("{publicId}", data.publicId ?: "-")
+                        .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
                 emailClient.sendEmail(
-                    to = toEmail,
+                    to = data.toEmail,
                     subject = "모이샤 참여 신청 대기",
                     htmlContent = htmlContent,
                     fromEmail = emailConfig.fromEmail,
                     fromName = emailConfig.fromName,
                 )
 
-                logger.info("신청 대기 정보가 $toEmail 로 전달되었습니다.")
+                logger.info("신청 대기 정보가 ${data.toEmail} 로 전달되었습니다.")
+            }
+            RegistrationStatus.CANCELED -> {
+                val htmlContent =
+                    loadTemplate("registration-canceled.html")
+                        .replace("{name}", data.name)
+                        .replace("{eventTitle}", data.eventTitle)
+                        .replace("{startsAt}", formatInstant(data.startsAt))
+                        .replace("{endsAt}", formatInstant(data.endsAt))
+                        .replace("{location}", data.location ?: "-")
+                        .replace("{confirmedCount}", data.confirmedCount?.toString() ?: "-")
+                        .replace("{capacity}", data.capacity?.toString() ?: "-")
+                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
+                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{description}", data.description ?: "-")
+
+                emailClient.sendEmail(
+                    to = data.toEmail,
+                    subject = "모이샤 참여 신청 취소",
+                    htmlContent = htmlContent,
+                    fromEmail = emailConfig.fromEmail,
+                    fromName = emailConfig.fromName,
+                )
+
+                logger.info("신청 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
+            }
+            RegistrationStatus.BANNED -> {
+                val htmlContent =
+                    loadTemplate("registration-banned.html")
+                        .replace("{name}", data.name)
+                        .replace("{eventTitle}", data.eventTitle)
+                        .replace("{startsAt}", formatInstant(data.startsAt))
+                        .replace("{endsAt}", formatInstant(data.endsAt))
+                        .replace("{location}", data.location ?: "-")
+                        .replace("{confirmedCount}", data.confirmedCount?.toString() ?: "-")
+                        .replace("{capacity}", data.capacity?.toString() ?: "-")
+                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
+                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{description}", data.description ?: "-")
+
+                emailClient.sendEmail(
+                    to = data.toEmail,
+                    subject = "모이샤 참여 신청 강제 취소",
+                    htmlContent = htmlContent,
+                    fromEmail = emailConfig.fromEmail,
+                    fromName = emailConfig.fromName,
+                )
+
+                logger.info("신청 강제 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
             }
             else -> {
-                logger.info("신청 상태가 $status 이라 메일을 전송하지 않았습니다: $toEmail")
+                logger.info("신청 상태가 ${data.status} 이라 메일을 전송하지 않았습니다: ${data.toEmail}")
             }
         }
     }
 
-    // 대기하다가 정원이 생겨 확정될 때, 보내는 템플릿
     fun sendWaitlistPromotionEmail(
         toEmail: String,
         eventTitle: String,
-        // 신청 메일 템플릿이 확정됨에 따라 인자 수정 가능
+        name: String,
+        waitingNum: Int?,
+        startsAt: Instant?,
+        endsAt: Instant?,
+        location: String?,
+        confirmedCount: Int?,
+        capacity: Int?,
+        registrationStartsAt: Instant?,
+        registrationEndsAt: Instant?,
+        description: String?,
+        eventPublicId: String,
+        registrationPublicId: String,
     ) {
         val htmlContent =
             loadTemplate("registration-waitlist-promoted.html")
+                .replace("{name}", name)
+                .replace("{waitingNum}", waitingNum?.toString() ?: "-")
                 .replace("{eventTitle}", eventTitle)
+                .replace("{startsAt}", formatInstant(startsAt))
+                .replace("{endsAt}", formatInstant(endsAt))
+                .replace("{location}", location ?: "-")
+                .replace("{confirmedCount}", confirmedCount?.toString() ?: "-")
+                .replace("{capacity}", capacity?.toString() ?: "-")
+                .replace("{registrationStartsAt}", formatInstant(registrationStartsAt))
+                .replace("{registrationEndsAt}", formatInstant(registrationEndsAt))
+                .replace("{description}", description ?: "-")
+                .replace("{publicId}", eventPublicId)
+                .replace("{registrationPublicId}", registrationPublicId)
 
         emailClient.sendEmail(
             to = toEmail,
@@ -123,5 +231,13 @@ class EmailService(
         )
 
         logger.info("신청 대기 후 확정 정보가 $toEmail 로 전달되었습니다.")
+    }
+
+    private fun formatInstant(instant: Instant?): String =
+        instant?.atZone(ZoneId.of("Asia/Seoul"))?.format(KOREAN_DATETIME_FORMATTER) ?: "-"
+
+    companion object {
+        private val KOREAN_DATETIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
     }
 }

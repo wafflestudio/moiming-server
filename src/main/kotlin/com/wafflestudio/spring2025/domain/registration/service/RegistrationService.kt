@@ -150,19 +150,37 @@ class RegistrationService(
                 null
             }
 
-        val recipientEmail =
-            if (userId != null) {
-                userRepository.findById(userId).orElse(null)?.email
-            } else {
-                guestEmail
+        val user =
+            userId?.let { id ->
+                userRepository.findById(id).orElse(null)
             }
 
+        val recipientEmail = user?.email ?: guestEmail
+
         if (!recipientEmail.isNullOrBlank()) {
+            val confirmedCount =
+                registrationRepository
+                    .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
+                    .toInt()
+
             emailService.sendRegistrationStatusEmail(
-                toEmail = recipientEmail,
-                eventTitle = event.title,
-                status = saved.status,
-                waitingNum = waitlistedNumber, // DTO/메일 파라미터 이름은 기존 유지
+                EmailService.RegistrationStatusEmailData(
+                    toEmail = recipientEmail,
+                    status = saved.status,
+                    name = saved.guestName ?: user?.name ?: "참여자",
+                    eventTitle = event.title,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    confirmedCount = confirmedCount,
+                    capacity = event.capacity,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
+                    description = event.description,
+                    publicId = event.publicId,
+                    registrationPublicId = saved.registrationPublicId,
+                    waitingNum = waitlistedNumber,
+                ),
             )
         }
 
@@ -547,7 +565,6 @@ class RegistrationService(
                 .findById(eventId)
                 .orElseThrow { EventNotFoundException() }
 
-        // ✅ 변경된 필드명 반영
         val registrationStartsAt = event.registrationStartsAt
         val registrationEndsAt = event.registrationEndsAt
         val now = Instant.now()
@@ -585,20 +602,43 @@ class RegistrationService(
                 RegistrationStatus.WAITLISTED,
             )
 
+        val waitlistNumbers =
+            waitlistedRegs.withIndex().associate { indexed ->
+                indexed.value.registrationPublicId to (indexed.index + 1)
+            }
+
         val promoted = waitlistedRegs.take(available)
         promoted.forEach { it.status = RegistrationStatus.CONFIRMED }
         registrationRepository.saveAll(promoted)
 
+        val confirmedAfter = confirmed.toInt() + promoted.size
+
         promoted.forEach { registration ->
-            val recipientEmail =
+            val user =
                 registration.userId?.let { uid ->
-                    userRepository.findById(uid).orElse(null)?.email
-                } ?: registration.guestEmail
+                    userRepository.findById(uid).orElse(null)
+                }
+
+            val recipientEmail = user?.email ?: registration.guestEmail
+            val recipientName = user?.name ?: registration.guestName ?: "참여자"
+            val waitingNum = waitlistNumbers[registration.registrationPublicId]
 
             if (!recipientEmail.isNullOrBlank()) {
                 emailService.sendWaitlistPromotionEmail(
                     toEmail = recipientEmail,
                     eventTitle = event.title,
+                    name = recipientName,
+                    waitingNum = waitingNum,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    confirmedCount = confirmedAfter,
+                    capacity = capacity,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
+                    description = event.description,
+                    eventPublicId = event.publicId,
+                    registrationPublicId = registration.registrationPublicId,
                 )
             }
         }

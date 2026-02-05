@@ -19,11 +19,11 @@
             <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
                 <tr>
                     <td width="48" style="vertical-align: middle;">
-                        <img src="https://your-server.com/images/status_check_blue.png" alt="Waiting" width="48" height="48" style="display: block;">
+                        <img src="https://your-server.com/images/status_check_red.png" alt="Cancelled" width="48" height="48" style="display: block;">
                     </td>
                     <td style="padding-left: 15px; font-size: 22px; font-weight: bold; line-height: 1.3; color: #111;">
                         안녕하세요 {name}님<br>
-                        {waitingNum}번째로 대기 완료했습니다.
+                        신청이 취소되었습니다.
                     </td>
                 </tr>
             </table>
@@ -80,9 +80,6 @@
 
             <div style="font-size: 16px; line-height: 1.7; color: #333; margin-bottom: 50px; white-space: pre-wrap; word-break: break-all;">{description}</div>
 
-            <a href="https://www.moiming.app/event/{publicId}?regId={registrationPublicId}" style="display: block; width: 100%; padding: 18px 0; background-color: #FFF5F5; border: 1px solid #E57373; border-radius: 10px; color: #C62828; font-size: 17px; font-weight: bold; text-align: center; text-decoration: none;">
-                취소하기
-            </a>
         </td>
     </tr>
 </table>
