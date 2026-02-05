@@ -59,6 +59,12 @@ data class ViewerInfo(
     )
     val status: ViewerStatus,
     @Schema(
+        description = "viewer 이름 (비회원이면 null)",
+        example = "홍길동",
+        nullable = true,
+    )
+    val name: String?,
+    @Schema(
         description = "대기 순번 (WAITLISTED일 때만 숫자, 아니면 null)",
         example = "3",
         nullable = true,

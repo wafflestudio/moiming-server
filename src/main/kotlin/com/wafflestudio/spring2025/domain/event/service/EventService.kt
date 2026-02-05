@@ -137,10 +137,16 @@ class EventService(
                     }
             }
 
+        val viewerName: String? =
+            requesterId?.let {
+                userRepository.findById(it).orElse(null)?.name
+            }
+
         val viewer =
             if (viewerStatus == ViewerStatus.NONE) {
                 ViewerInfo(
                     status = ViewerStatus.NONE,
+                    name = viewerName,
                     waitlistPosition = null,
                     registrationPublicId = null,
                     reservationEmail = null,
@@ -148,6 +154,7 @@ class EventService(
             } else {
                 ViewerInfo(
                     status = viewerStatus,
+                    name = viewerName,
                     waitlistPosition = waitlistPosition,
                     registrationPublicId = myReg?.registrationPublicId,
                     reservationEmail = myReg?.guestEmail,
