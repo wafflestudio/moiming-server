@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.registration.controller
 
+import com.wafflestudio.spring2025.domain.auth.AuthRequired
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.registration.dto.GetMyRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
+@AuthRequired
 @RestController
 @RequestMapping("/api/v1/registrations")
 @Tag(name = "Registration", description = "내 신청 조회 API")

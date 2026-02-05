@@ -53,3 +53,10 @@ class SignUpEmailConflictException :
         httpStatusCode = HttpStatus.CONFLICT,
         msg = "Email conflict",
     )
+
+class AuthenticateRequiredException :
+    AuthException(
+        errorCode = 1006,
+        httpStatusCode = HttpStatus.UNAUTHORIZED,
+        msg = "User needs to be logged in",
+    )
