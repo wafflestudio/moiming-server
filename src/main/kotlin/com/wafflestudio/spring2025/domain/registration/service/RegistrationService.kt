@@ -25,6 +25,7 @@ import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRe
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationTokenRepository
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
@@ -240,8 +241,8 @@ class RegistrationService(
         page: Int,
         size: Int,
     ): GetMyRegistrationsResponse {
-        val registrations = registrationRepository.findByUserIdOrderByCreatedAtDesc(userId)
-        val paged = registrations.drop(page * size).take(size)
+        val pageable = PageRequest.of(page, size)
+        val paged = registrationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
         if (paged.isEmpty()) {
             return GetMyRegistrationsResponse(registrations = emptyList())
         }
@@ -253,31 +254,24 @@ class RegistrationService(
             }
 
         val countsByEventId =
-            eventIds.associateWith { eventId ->
-                val confirmed =
-                    registrationRepository
-                        .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
-                        .toInt()
-                val waitlisted =
-                    registrationRepository
-                        .countByEventIdAndStatus(eventId, RegistrationStatus.WAITLISTED)
-                        .toInt()
-                confirmed + waitlisted
-            }
+            registrationRepository
+                .countByEventIdsAndStatuses(
+                    eventIds = eventIds,
+                    statuses = listOf(RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLISTED),
+                )
+                .associate { it.eventId to it.totalCount.toInt() }
 
-        val waitlistedRegsByEventId =
-            eventIds.associateWith { eventId ->
-                registrationRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, RegistrationStatus.WAITLISTED)
-            }
+        val waitlistedByRegistrationId =
+            registrationRepository
+                .findWaitlistPositionsByEventIds(eventIds, RegistrationStatus.WAITLISTED)
+                .associate { it.registrationPublicId to it.waitlistNumber.toInt() }
 
         val items =
             paged.map { registration ->
                 val event = eventsById[registration.eventId] ?: throw EventNotFoundException()
                 val waitlistedNumber: Int? =
                     if (registration.status == RegistrationStatus.WAITLISTED) {
-                        val waitlistedList = waitlistedRegsByEventId[registration.eventId].orEmpty()
-                        val index = waitlistedList.indexOfFirst { it.id == registration.id }
-                        if (index >= 0) index + 1 else null
+                        waitlistedByRegistrationId[registration.registrationPublicId]
                     } else {
                         null
                     }
