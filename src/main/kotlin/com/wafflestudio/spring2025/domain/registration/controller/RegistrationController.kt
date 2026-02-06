@@ -52,10 +52,9 @@ class RegistrationController(
     @GetMapping
     fun getRegistrationInformation(
         @PathVariable registrationId: String,
-        @LoggedInUser user: User,
+        @LoggedInUser user: User?,
     ): ResponseEntity<GetRegistrationResponse> {
-        val userId = user.id ?: throw UserIdentityNotFoundException()
-        val response = registrationService.getRegistrationInformation(registrationId, userId)
+        val response = registrationService.getRegistrationInformation(registrationId, user)
         return ResponseEntity.ok(response)
     }
 }

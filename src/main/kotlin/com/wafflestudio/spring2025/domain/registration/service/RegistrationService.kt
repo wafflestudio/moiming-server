@@ -25,6 +25,7 @@ import com.wafflestudio.spring2025.domain.registration.model.RegistrationToken
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationTokenPurpose
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationTokenRepository
+import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -530,13 +531,17 @@ class RegistrationService(
 
     fun getRegistrationInformation(
         registrationId: String,
-        userId: Long,
+        user: User?,
     ): GetRegistrationResponse {
         val registration =
             registrationRepository.findByRegistrationPublicId(registrationId)
                 ?: throw RegistrationNotFoundException()
 
-        if (userId != registration.userId) throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_UNAUTHORIZED)
+        if (user != null &&
+            user.id != registration.userId
+        ) {
+            throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_UNAUTHORIZED)
+        }
 
         val status = registration.status
         val waitlistPosition =
