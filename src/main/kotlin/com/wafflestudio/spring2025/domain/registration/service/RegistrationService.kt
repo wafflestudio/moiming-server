@@ -332,6 +332,7 @@ class RegistrationService(
         return GetMyRegistrationsResponse(registrations = items)
     }
 
+    @Transactional
     fun updateStatus(
         userId: Long,
         registrationId: String,
@@ -510,61 +511,6 @@ class RegistrationService(
             "name" -> RegistrationOrderBy.NAME
             else -> RegistrationOrderBy.REGISTERED_AT
         }
-
-    fun cancelWithToken(
-        registrationId: String,
-        token: String,
-    ) {
-        val registration =
-            registrationRepository.findByRegistrationPublicId(registrationId)
-                ?: throw RegistrationNotFoundException()
-
-        val registrationPk = registration.id ?: throw RegistrationNotFoundException()
-
-        if (!isRegistrationEnabled(registration.eventId)) {
-            throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
-        }
-
-        val tokenHash = hashToken(token)
-        val registrationToken =
-            registrationTokenRepository.findByTokenHashAndPurpose(
-                tokenHash,
-                RegistrationTokenPurpose.CANCEL,
-            ) ?: throw RegistrationForbiddenException(
-                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
-            )
-
-        val tokenCreatedAt =
-            registrationToken.createdAt ?: throw RegistrationForbiddenException(
-                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
-            )
-
-        if (tokenCreatedAt.plus(tokenValidity).isBefore(Instant.now())) {
-            registrationTokenRepository.delete(registrationToken)
-            throw RegistrationForbiddenException(
-                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
-            )
-        }
-
-        if (registrationToken.registrationId != registrationPk) {
-            throw RegistrationForbiddenException(
-                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
-            )
-        }
-
-        if (registration.status == RegistrationStatus.CANCELED) {
-            throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_CANCELED)
-        }
-
-        val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
-        registration.status = RegistrationStatus.CANCELED
-        registrationRepository.save(registration)
-
-        if (wasConfirmed) {
-            reconcileWaitlist(registration.eventId)
-        }
-        registrationTokenRepository.delete(registrationToken)
-    }
 
     fun getRegistrationInformation(
         registrationId: String,
