@@ -73,7 +73,7 @@ interface RegistrationRepository :
         SELECT r.*
         FROM registrations r
         WHERE r.event_id = :eventId
-        ORDER BY r.created_at ASC, r.registration_public_id ASC
+        ORDER BY r.created_at DESC, r.registration_public_id DESC
         LIMIT :limit OFFSET :offset
         """,
     )
@@ -88,7 +88,7 @@ interface RegistrationRepository :
         SELECT r.*
         FROM registrations r
         WHERE r.event_id = :eventId AND r.status = :status
-        ORDER BY r.created_at ASC, r.registration_public_id ASC
+        ORDER BY r.created_at DESC, r.registration_public_id DESC
         LIMIT :limit OFFSET :offset
         """,
     )

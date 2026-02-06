@@ -258,8 +258,7 @@ class RegistrationService(
                 .countByEventIdsAndStatuses(
                     eventIds = eventIds,
                     statuses = listOf(RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLISTED),
-                )
-                .associate { it.eventId to it.totalCount.toInt() }
+                ).associate { it.eventId to it.totalCount.toInt() }
 
         val waitlistedByRegistrationId =
             registrationRepository
@@ -427,8 +426,7 @@ class RegistrationService(
                         eventId = eventPk,
                         status = RegistrationStatus.WAITLISTED,
                         registrationPublicIds = waitlistedPublicIds,
-                    )
-                    .associate { it.registrationPublicId to it.waitlistNumber.toInt() }
+                    ).associate { it.registrationPublicId to it.waitlistNumber.toInt() }
             }
 
         val page =
