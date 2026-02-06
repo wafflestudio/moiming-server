@@ -26,3 +26,7 @@ class RegistrationValidationException(
 class RegistrationConflictException(
     error: RegistrationErrorCode,
 ) : RegistrationException(error = error)
+
+class RegistrationQueryParameterException(
+    error: RegistrationErrorCode,
+) : RegistrationException(error = error)

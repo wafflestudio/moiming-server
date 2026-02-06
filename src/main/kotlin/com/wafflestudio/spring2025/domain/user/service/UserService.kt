@@ -3,6 +3,8 @@ package com.wafflestudio.spring2025.domain.user.service
 import com.wafflestudio.spring2025.config.AwsS3Properties
 import com.wafflestudio.spring2025.domain.auth.exception.AuthenticationRequiredException
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
+import com.wafflestudio.spring2025.domain.user.exception.UserErrorCode
+import com.wafflestudio.spring2025.domain.user.exception.UserValidationException
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
@@ -104,12 +106,12 @@ class UserService(
     }
 
     private fun validateProfileImage(image: MultipartFile) {
-        if (image.isEmpty) throw IllegalArgumentException("이미지 파일이 비어있습니다.")
+        if (image.isEmpty) throw UserValidationException(UserErrorCode.PROFILE_IMAGE_EMPTY)
         val contentType = image.contentType ?: ""
-        if (!contentType.startsWith("image/")) throw IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.")
+        if (!contentType.startsWith("image/")) throw UserValidationException(UserErrorCode.PROFILE_IMAGE_FORMAT_INVALID)
 
         val maxSizeBytes = 5L * 1024L * 1024L
-        if (image.size > maxSizeBytes) throw IllegalArgumentException("이미지 파일 크기는 5MB 이하만 가능합니다.")
+        if (image.size > maxSizeBytes) throw UserValidationException(UserErrorCode.PROFILE_IMAGE_TOO_LARGE)
     }
 
     private fun extractExtension(originalFilename: String?): String {

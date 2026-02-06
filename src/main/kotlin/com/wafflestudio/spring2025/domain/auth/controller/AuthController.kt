@@ -2,7 +2,6 @@ package com.wafflestudio.spring2025.domain.auth.controller
 
 import com.wafflestudio.spring2025.domain.auth.dto.LoginRequest
 import com.wafflestudio.spring2025.domain.auth.dto.LoginResponse
-import com.wafflestudio.spring2025.domain.auth.dto.LogoutResponse
 import com.wafflestudio.spring2025.domain.auth.dto.SignupRequest
 import com.wafflestudio.spring2025.domain.auth.service.AuthService
 import com.wafflestudio.spring2025.domain.auth.service.EmailVerificationService
@@ -92,7 +91,7 @@ class AuthController(
         ],
     )
     @PostMapping("/logout")
-    fun logout(request: HttpServletRequest): ResponseEntity<LogoutResponse> {
+    fun logout(request: HttpServletRequest): ResponseEntity<Void> {
         val token = resolveToken(request)
         authService.logout(token)
         return ResponseEntity.noContent().build()

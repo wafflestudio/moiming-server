@@ -130,7 +130,7 @@ class EmailVerificationService(
     fun resendVerificationEmail(email: String) {
         val pendingUser =
             pendingUserRepository.findByEmail(email)
-                ?: throw AuthValidationException(AuthErrorCode.INVALID_VERIFICATION_CODE)
+                ?: throw AuthValidationException(AuthErrorCode.NO_SUCH_PENDING_USER)
 
         // Generate new verification code
         val newCode = generateVerificationCode()

@@ -23,10 +23,16 @@ enum class RegistrationErrorCode(
     ),
 
     // 31xx - Forbidden
-    REGISTRATION_UNAUTHORIZED(
+    REGISTRATION_PATCH_UNAUTHORIZED(
         httpStatusCode = HttpStatus.FORBIDDEN,
-        title = "신청을 관리할 권한이 없습니다.",
-        message = "본인의 신청이 아니거나,\n관리 권한이 없는 모임입니다.",
+        title = "신청 상태 변경 권한이 없습니다.",
+        message = "모임의 관리자 혹은 신청자 본인만\n신청 상태를 변경할 수 있습니다.",
+    ),
+
+    REGISTRATION_VIEW_UNAUTHORIZED(
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        title = "열람 권한이 없습니다.",
+        message = "본인의 신청 정보만 조회할 수 있습니다.",
     ),
 
     REGISTRATION_INVALID_TOKEN(
@@ -38,14 +44,14 @@ enum class RegistrationErrorCode(
     // 32xx - Validation (Bad Request)
     REGISTRATION_WRONG_NAME(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "이름이 일치하지 않습니다.",
-        message = "신청 시 입력한 이름과\n일치하지 않습니다.",
+        title = "이름 형식이 올바르지 않습니다.",
+        message = "최소 2글자 이상 입력해주세요.",
     ),
 
     REGISTRATION_WRONG_EMAIL(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "이메일이 일치하지 않습니다.",
-        message = "신청 시 입력한 이메일과\n일치하지 않습니다.",
+        title = "이메일 형식이 올바르지 않습니다.",
+        message = "모임 참여 정보를 받을 수 있도록\n이메일 주소를 정확하게 입력해 주세요.",
     ),
 
     REGISTRATION_INVALID_STATUS(
@@ -57,7 +63,7 @@ enum class RegistrationErrorCode(
     NOT_WITHIN_REGISTRATION_WINDOW(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "모집 기간이 아닙니다.",
-        message = "현재 모집 기간이 아니므로\n신청할 수 없습니다.",
+        message = "현재 모집 기간이 아니므로\n신청 혹은 정정이 불가합니다.",
     ),
 
     // 33xx - Conflict
@@ -77,5 +83,11 @@ enum class RegistrationErrorCode(
         httpStatusCode = HttpStatus.CONFLICT,
         title = "차단된 신청입니다.",
         message = "해당 신청은 차단 처리되어\n변경할 수 없습니다.",
+    ),
+
+    INVALID_REGISTRATION_QUERY_PARAMETER(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "신청자 필터 조건이 올바르지 않습니다.",
+        message = "유효하지 않은 쿼리 파라미터 값입니다.",
     ),
 }

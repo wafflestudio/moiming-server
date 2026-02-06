@@ -1,6 +1,7 @@
 package com.wafflestudio.spring2025.common.email.service
 
 import com.wafflestudio.spring2025.common.email.client.EmailClient
+import com.wafflestudio.spring2025.common.email.exception.EmailServiceUnavailableException
 import com.wafflestudio.spring2025.config.EmailConfig
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import org.slf4j.LoggerFactory
@@ -41,8 +42,7 @@ class EmailService(
                 fromName = emailConfig.fromName,
             )
         } catch (e: Exception) {
-            // throw EmailServiceUnavailableException()
-            throw e
+            throw EmailServiceUnavailableException()
         }
 
         logger.info("Verification email sent to: $toEmail")

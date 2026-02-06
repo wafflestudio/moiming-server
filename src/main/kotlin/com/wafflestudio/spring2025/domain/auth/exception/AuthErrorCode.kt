@@ -59,4 +59,9 @@ enum class AuthErrorCode(
         title = "구글 로그인에 실패하였습니다.",
         message = "잠시 후 다시 시도해주세요.\n오류가 지속되면 개발자에게 문의해 주세요.",
     ),
+    NO_SUCH_PENDING_USER(
+        httpStatusCode = HttpStatus.NOT_FOUND,
+        title = "인증 요청 내역이 없습니다.",
+        message = "기존에 이메일 인증을 요청한\n이력이 없습니다.",
+    ),
 }
