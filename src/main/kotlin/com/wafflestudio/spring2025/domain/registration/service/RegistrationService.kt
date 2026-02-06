@@ -361,7 +361,7 @@ class RegistrationService(
 
     fun getEventRegistration(
         eventId: String,
-        requesterId: Long,
+        requesterId: Long?,
         status: String?,
         orderBy: String?,
         cursor: Int?,

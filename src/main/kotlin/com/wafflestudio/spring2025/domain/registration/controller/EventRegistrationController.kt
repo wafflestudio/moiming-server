@@ -52,20 +52,20 @@ class EventRegistrationController(
     @GetMapping
     fun list(
         @PathVariable eventId: String,
-        @LoggedInUser user: User,
+        @LoggedInUser user: User?,
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) orderBy: String?,
         @RequestParam(required = false) cursor: Int?,
     ): ResponseEntity<GetEventRegistrationsResponse> {
-        val userId = requireNotNull(user.id) { "로그인 사용자 ID가 없습니다." }
         return ResponseEntity.ok(
             registrationService.getEventRegistration(
                 eventId = eventId,
-                requesterId = userId,
+                requesterId = user?.id,
                 status = status,
                 orderBy = orderBy,
                 cursor = cursor,
             ),
         )
     }
+
 }
