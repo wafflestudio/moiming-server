@@ -56,8 +56,8 @@ class EventRegistrationController(
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) orderBy: String?,
         @RequestParam(required = false) cursor: Int?,
-    ): ResponseEntity<GetEventRegistrationsResponse> {
-        return ResponseEntity.ok(
+    ): ResponseEntity<GetEventRegistrationsResponse> =
+        ResponseEntity.ok(
             registrationService.getEventRegistration(
                 eventId = eventId,
                 requesterId = user?.id,
@@ -66,6 +66,4 @@ class EventRegistrationController(
                 cursor = cursor,
             ),
         )
-    }
-
 }
