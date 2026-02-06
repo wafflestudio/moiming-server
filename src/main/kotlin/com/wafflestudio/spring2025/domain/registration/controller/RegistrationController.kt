@@ -7,7 +7,6 @@ import com.wafflestudio.spring2025.domain.registration.dto.UpdateRegistrationSta
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationErrorCode
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationValidationException
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
-import com.wafflestudio.spring2025.domain.user.identity.exception.UserIdentityNotFoundException
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -35,11 +34,10 @@ class RegistrationController(
     fun updateStatus(
         @PathVariable registrationId: String,
         @RequestBody request: UpdateRegistrationStatusRequest,
-        @LoggedInUser user: User,
+        @LoggedInUser user: User?,
     ): ResponseEntity<PatchRegistrationResponse> {
-        val userId = user.id ?: throw UserIdentityNotFoundException()
         val status = request.status ?: throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_INVALID_STATUS)
-        val response = registrationService.updateStatus(userId, registrationId, status)
+        val response = registrationService.updateStatus(user?.id, registrationId, status)
 
         return ResponseEntity.ok(response)
     }

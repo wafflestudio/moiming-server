@@ -294,7 +294,7 @@ class RegistrationService(
     }
 
     fun updateStatus(
-        userId: Long,
+        userId: Long?,
         registrationId: String,
         status: RegistrationStatus,
     ): PatchRegistrationResponse {
@@ -309,13 +309,13 @@ class RegistrationService(
 
         val event = eventRepository.findById(eventPk).orElseThrow { EventNotFoundException() }
 
-        val isHost = userId == event.createdBy
-        val isRegistrant = registration.userId == userId
+        val isHost = userId != null && userId == event.createdBy
+        val isRegistrant = userId != null && registration.userId == userId
 
         if (status == RegistrationStatus.BANNED && !isHost) {
             throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
         }
-        if (status == RegistrationStatus.CANCELED && !isHost && !isRegistrant) {
+        if (status == RegistrationStatus.CANCELED && !isHost && !isRegistrant && userId != null) {
             throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
         }
 
