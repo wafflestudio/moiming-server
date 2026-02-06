@@ -70,6 +70,7 @@ class EventController(
         return ResponseEntity.ok(response)
     }
 
+    @AuthRequired
     @Operation(
         summary = "내가 만든 이벤트 목록 조회 (무한 스크롤)",
         description = "로그인된 사용자가 생성한 이벤트 목록을 무한 스크롤 방식(cursor)으로 조회합니다",
