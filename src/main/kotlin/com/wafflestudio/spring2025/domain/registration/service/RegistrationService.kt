@@ -19,7 +19,6 @@ import com.wafflestudio.spring2025.domain.registration.exception.RegistrationNot
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationValidationException
 import com.wafflestudio.spring2025.domain.registration.model.Registration
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
-import com.wafflestudio.spring2025.domain.registration.model.RegistrationToken
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationTokenPurpose
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationTokenRepository
