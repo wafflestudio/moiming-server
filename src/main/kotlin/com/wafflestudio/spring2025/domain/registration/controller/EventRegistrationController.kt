@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/v1/events/{eventId}/registrations")
+@RequestMapping("/api/events/{eventId}/registrations")
 @Tag(name = "Registration", description = "이벤트 기준 신청 API")
 class EventRegistrationController(
     private val registrationService: RegistrationService,
@@ -31,7 +31,7 @@ class EventRegistrationController(
     )
     @PostMapping
     fun create(
-        @PathVariable eventId: Long,
+        @PathVariable eventId: String,
         @RequestBody request: CreateRegistrationRequest,
         @LoggedInUser user: User?,
     ): ResponseEntity<CreateRegistrationResponse> {
@@ -51,7 +51,7 @@ class EventRegistrationController(
     )
     @GetMapping
     fun list(
-        @PathVariable eventId: Long,
+        @PathVariable eventId: String,
         @LoggedInUser user: User,
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) orderBy: String?,
@@ -68,33 +68,4 @@ class EventRegistrationController(
             ),
         )
     }
-
-    // 나중에 프론트에 요청에 따라 수정
-//    @Operation(
-//        summary = "이벤트 신청 단건 조회",
-//        description = "이벤트 신청 단건을 조회합니다.",
-//    )
-//    @GetMapping("/{registrationPublicId}")
-//    fun get(
-//        @PathVariable eventId: Long,
-//        @PathVariable registrationPublicId: String,
-//        @LoggedInUser user: User,
-//    ): ResponseEntity<RegistrationDto> {
-//        val userId = requireNotNull(user.id) { "로그인 사용자 ID가 없습니다." }
-//        return ResponseEntity.ok(registrationService.getByPublicId(eventId, registrationPublicId, userId))
-//    }
-//
-//    @Operation(
-//        summary = "이벤트 신청 취소",
-//        description = "취소 토큰을 이용해 신청을 취소합니다. 토큰은 24시간 내 만료되며, 취소 후 대기자가 자동 승격될 수 있습니다.",
-//    )
-//    @PostMapping("/{registrationPublicId}/cancel")
-//    fun cancel(
-//        @PathVariable eventId: Long,
-//        @PathVariable registrationPublicId: String,
-//        @RequestParam token: String,
-//    ): ResponseEntity<Unit> {
-//        registrationService.cancelWithTokenByPublicId(eventId, registrationPublicId, token)
-//        return ResponseEntity.ok().build()
-//    }
 }

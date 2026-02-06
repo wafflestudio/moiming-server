@@ -33,7 +33,7 @@ class RegistrationController(
     )
     @PatchMapping
     fun updateStatus(
-        @PathVariable registrationId: Long,
+        @PathVariable registrationId: String,
         @RequestBody request: UpdateRegistrationStatusRequest,
         @LoggedInUser user: User,
     ): ResponseEntity<PatchRegistrationResponse> {
@@ -51,7 +51,7 @@ class RegistrationController(
     )
     @GetMapping
     fun getRegistrationInformation(
-        @PathVariable registrationId: Long,
+        @PathVariable registrationId: String,
         @LoggedInUser user: User,
     ): ResponseEntity<GetRegistrationResponse> {
         val userId = user.id ?: throw UserIdentityNotFoundException()

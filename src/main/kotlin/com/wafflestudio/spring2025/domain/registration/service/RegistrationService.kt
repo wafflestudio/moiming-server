@@ -47,20 +47,21 @@ class RegistrationService(
 
     fun create(
         userId: Long?,
-        eventId: Long,
+        eventId: String,
         guestName: String?,
         guestEmail: String?,
     ): CreateRegistrationResponse {
-        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+        val event = eventRepository.findByPublicId(eventId) ?: throw EventNotFoundException()
+        val eventPk = event.id ?: throw EventNotFoundException()
 
-        if (!isRegistrationEnabled(eventId)) {
+        if (!isRegistrationEnabled(eventPk)) {
             throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
         }
 
         val capacity = event.capacity ?: throw IllegalStateException("이벤트의 capacity가 설정되어 있지 않습니다.")
         val currentConfirmed =
             registrationRepository
-                .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
+                .countByEventIdAndStatus(eventPk, RegistrationStatus.CONFIRMED)
                 .toInt()
 
         val status =
@@ -80,9 +81,9 @@ class RegistrationService(
                 if (guestEmail.isNullOrBlank() || !emailRegex.matches(guestEmail)) {
                     throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
                 }
-                registrationRepository.findByGuestEmailAndEventId(guestEmail, eventId)
+                registrationRepository.findByGuestEmailAndEventId(guestEmail, eventPk)
             } else {
-                registrationRepository.findByUserIdAndEventId(userId, eventId)
+                registrationRepository.findByUserIdAndEventId(userId, eventPk)
             }
 
         val saved =
@@ -109,7 +110,7 @@ class RegistrationService(
                     if (userId == null) {
                         Registration(
                             userId = null,
-                            eventId = eventId,
+                            eventId = eventPk,
                             guestName = guestName,
                             guestEmail = guestEmail,
                             status = status,
@@ -117,7 +118,7 @@ class RegistrationService(
                     } else {
                         Registration(
                             userId = userId,
-                            eventId = eventId,
+                            eventId = eventPk,
                             guestName = null,
                             guestEmail = null,
                             status = status,
@@ -138,7 +139,7 @@ class RegistrationService(
         val waitlistedNumber: Int? =
             if (saved.status == RegistrationStatus.WAITLISTED) {
                 registrationRepository
-                    .countByEventIdAndStatus(eventId, RegistrationStatus.WAITLISTED)
+                    .countByEventIdAndStatus(eventPk, RegistrationStatus.WAITLISTED)
                     .toInt()
             } else {
                 null
@@ -154,7 +155,7 @@ class RegistrationService(
         if (!recipientEmail.isNullOrBlank()) {
             val confirmedCount =
                 registrationRepository
-                    .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
+                    .countByEventIdAndStatus(eventPk, RegistrationStatus.CONFIRMED)
                     .toInt()
 
             emailService.sendRegistrationStatusEmail(
@@ -195,17 +196,18 @@ class RegistrationService(
         }
 
     fun getGuestsByEventId(
-        eventId: Long,
+        eventId: String,
         requesterId: Long,
     ): RegistrationGuestsResponse {
-        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+        val event = eventRepository.findByPublicId(eventId) ?: throw EventNotFoundException()
+        val eventPk = event.id ?: throw EventNotFoundException()
         if (event.createdBy != requesterId) {
             throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_UNAUTHORIZED)
         }
 
         val guests =
             registrationRepository
-                .findByEventId(eventId)
+                .findByEventId(eventPk)
                 .filter { it.status == RegistrationStatus.CONFIRMED }
                 .map { registration ->
                     val user = registration.userId?.let { userId -> userRepository.findById(userId).orElse(null) }
@@ -219,12 +221,12 @@ class RegistrationService(
 
         val confirmedCount =
             registrationRepository
-                .countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)
+                .countByEventIdAndStatus(eventPk, RegistrationStatus.CONFIRMED)
                 .toInt()
 
         val waitlistedCount =
             registrationRepository
-                .countByEventIdAndStatus(eventId, RegistrationStatus.WAITLISTED)
+                .countByEventIdAndStatus(eventPk, RegistrationStatus.WAITLISTED)
                 .toInt()
 
         return RegistrationGuestsResponse(
@@ -294,23 +296,19 @@ class RegistrationService(
 
     fun updateStatus(
         userId: Long,
-        registrationId: Long,
+        registrationId: String,
         status: RegistrationStatus,
     ): PatchRegistrationResponse {
         val registration =
-            registrationRepository
-                .findById(registrationId)
-                .orElseThrow { RegistrationNotFoundException() }
-        val eventId = registration.eventId
+            registrationRepository.findByRegistrationPublicId(registrationId)
+                ?: throw RegistrationNotFoundException()
+        val eventPk = registration.eventId
 
-        if (!isRegistrationEnabled(eventId)) {
+        if (!isRegistrationEnabled(eventPk)) {
             throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
         }
 
-        val event =
-            eventRepository
-                .findById(registration.eventId)
-                .orElseThrow { EventNotFoundException() }
+        val event = eventRepository.findById(eventPk).orElseThrow { EventNotFoundException() }
 
         val isHost = userId == event.createdBy
         val isRegistrant = registration.userId == userId
@@ -350,7 +348,7 @@ class RegistrationService(
         }
 
         if (wasConfirmed) {
-            reconcileWaitlist(registration.eventId)
+            reconcileWaitlist(eventPk)
         }
 
         val patchEmail =
@@ -362,19 +360,20 @@ class RegistrationService(
     }
 
     fun getEventRegistration(
-        eventId: Long,
+        eventId: String,
         requesterId: Long,
         status: String?,
         orderBy: String?,
         cursor: Int?,
     ): GetEventRegistrationsResponse {
-        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+        val event = eventRepository.findByPublicId(eventId) ?: throw EventNotFoundException()
+        val eventPk = event.id ?: throw EventNotFoundException()
         val isAdmin = event.createdBy == requesterId
 
         val statusFilter = parseStatusFilter(status)
         val order = parseOrderBy(orderBy)
 
-        val registrations = registrationRepository.findByEventId(eventId)
+        val registrations = registrationRepository.findByEventId(eventPk)
         val filtered =
             statusFilter?.let { filter ->
                 registrations.filter { it.status == filter }
@@ -475,13 +474,14 @@ class RegistrationService(
         }
 
     fun cancelWithToken(
-        registrationId: Long,
+        registrationId: String,
         token: String,
     ) {
         val registration =
-            registrationRepository
-                .findById(registrationId)
-                .orElseThrow { RegistrationNotFoundException() }
+            registrationRepository.findByRegistrationPublicId(registrationId)
+                ?: throw RegistrationNotFoundException()
+
+        val registrationPk = registration.id ?: throw RegistrationNotFoundException()
 
         if (!isRegistrationEnabled(registration.eventId)) {
             throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
@@ -489,17 +489,29 @@ class RegistrationService(
 
         val tokenHash = hashToken(token)
         val registrationToken =
-            registrationTokenRepository.findByTokenHashAndPurpose(tokenHash, RegistrationTokenPurpose.CANCEL)
-                ?: throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_INVALID_TOKEN)
+            registrationTokenRepository.findByTokenHashAndPurpose(
+                tokenHash,
+                RegistrationTokenPurpose.CANCEL,
+            ) ?: throw RegistrationForbiddenException(
+                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
+            )
+
         val tokenCreatedAt =
-            registrationToken.createdAt ?: throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_INVALID_TOKEN)
+            registrationToken.createdAt ?: throw RegistrationForbiddenException(
+                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
+            )
 
         if (tokenCreatedAt.plus(tokenValidity).isBefore(Instant.now())) {
             registrationTokenRepository.delete(registrationToken)
-            throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_INVALID_TOKEN)
+            throw RegistrationForbiddenException(
+                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
+            )
         }
-        if (registrationToken.registrationId != registrationId) {
-            throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_INVALID_TOKEN)
+
+        if (registrationToken.registrationId != registrationPk) {
+            throw RegistrationForbiddenException(
+                RegistrationErrorCode.REGISTRATION_INVALID_TOKEN,
+            )
         }
 
         if (registration.status == RegistrationStatus.CANCELED) {
@@ -517,13 +529,12 @@ class RegistrationService(
     }
 
     fun getRegistrationInformation(
-        registrationId: Long,
+        registrationId: String,
         userId: Long,
     ): GetRegistrationResponse {
         val registration =
-            registrationRepository
-                .findById(registrationId)
-                .orElseThrow { RegistrationNotFoundException() }
+            registrationRepository.findByRegistrationPublicId(registrationId)
+                ?: throw RegistrationNotFoundException()
 
         if (userId != registration.userId) throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_UNAUTHORIZED)
 

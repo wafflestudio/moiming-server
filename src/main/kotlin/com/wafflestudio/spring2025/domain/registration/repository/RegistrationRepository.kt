@@ -9,8 +9,6 @@ interface RegistrationRepository : ListCrudRepository<Registration, Long> {
 
     fun findByRegistrationPublicId(registrationPublicId: String): Registration?
 
-    fun findByUserId(userId: Long): List<Registration>
-
     fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Registration>
 
     fun findByUserIdAndEventId(
@@ -22,18 +20,6 @@ interface RegistrationRepository : ListCrudRepository<Registration, Long> {
         guestEmail: String,
         eventId: Long,
     ): Registration?
-
-    fun existsByUserIdAndEventId(
-        userId: Long,
-        eventId: Long,
-    ): Boolean
-
-    fun existsByGuestEmailAndEventId(
-        guestEmail: String,
-        eventId: Long,
-    ): Boolean
-
-    fun countByEventId(eventID: Long): Long
 
     fun countByEventIdAndStatus(
         eventID: Long,

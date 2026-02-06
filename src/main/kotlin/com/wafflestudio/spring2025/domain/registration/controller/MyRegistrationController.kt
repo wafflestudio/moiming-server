@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @AuthRequired
 @RestController
-@RequestMapping("/api/v1/registrations")
+@RequestMapping("/api/registrations")
 @Tag(name = "Registration", description = "내 신청 조회 API")
 class MyRegistrationController(
     private val registrationService: RegistrationService,
