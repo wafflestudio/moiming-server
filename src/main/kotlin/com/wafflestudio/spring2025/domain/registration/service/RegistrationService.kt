@@ -179,9 +179,7 @@ class RegistrationService(
         }
 
         return CreateRegistrationResponse(
-            status = toResponseStatus(saved.status),
-            waitingNum = waitlistedNumber,
-            confirmEmail = recipientEmail,
+            registrationPublicId = cancelToken,
         )
     }
 
@@ -555,13 +553,17 @@ class RegistrationService(
                 0
             }
 
-        val reservationEmail =
+        val registrationUser =
             registration.userId?.let { uid ->
-                userRepository.findById(uid).orElse(null)?.email
-            } ?: registration.guestEmail
+                userRepository.findById(uid).orElse(null)
+            }
+
+        val reservationEmail = registrationUser?.email ?: registration.guestEmail
+        val guestName = registrationUser?.name ?: registration.guestName
 
         return GetRegistrationResponse(
             status = status,
+            guestName = guestName.orEmpty(),
             waitlistPosition = waitlistPosition,
             registrationPublicId = registration.registrationPublicId,
             reservationEmail = reservationEmail.orEmpty(),
