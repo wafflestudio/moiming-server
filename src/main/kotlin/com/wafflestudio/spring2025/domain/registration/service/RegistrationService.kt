@@ -13,7 +13,6 @@ import com.wafflestudio.spring2025.domain.registration.dto.response.GetMyRegistr
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.MyRegistrationItem
 import com.wafflestudio.spring2025.domain.registration.dto.response.PatchRegistrationResponse
-import com.wafflestudio.spring2025.domain.registration.dto.response.RegistrationGuestsResponse.Guest
 import com.wafflestudio.spring2025.domain.registration.dto.response.RegistrationStatusResponse
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationConflictException
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationErrorCode
