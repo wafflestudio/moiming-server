@@ -95,7 +95,7 @@ class EmailService(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
                         )
-                        .replace("{description}", data.description ?: "-")
+                        .replace("{description}", formatDescription(data.description))
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
@@ -124,7 +124,7 @@ class EmailService(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
                         )
-                        .replace("{description}", data.description ?: "-")
+                        .replace("{description}", formatDescription(data.description))
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
@@ -151,7 +151,7 @@ class EmailService(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
                         )
-                        .replace("{description}", data.description ?: "-")
+                        .replace("{description}", formatDescription(data.description))
 
                 emailClient.sendEmail(
                     to = data.toEmail,
@@ -176,7 +176,7 @@ class EmailService(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
                         )
-                        .replace("{description}", data.description ?: "-")
+                        .replace("{description}", formatDescription(data.description))
 
                 emailClient.sendEmail(
                     to = data.toEmail,
@@ -223,7 +223,7 @@ class EmailService(
                     "{registrationDateRange}",
                     formatRegistrationDateRange(registrationStartsAt, registrationEndsAt),
                 )
-                .replace("{description}", description ?: "-")
+                .replace("{description}", formatDescription(description))
                 .replace("{publicId}", eventPublicId)
                 .replace("{registrationPublicId}", registrationPublicId)
 
@@ -276,6 +276,11 @@ class EmailService(
             endText.isNullOrBlank() -> startText
             else -> "$startText-$endText"
         }
+    }
+
+    private fun formatDescription(description: String?): String {
+        if (description == null) return "-"
+        return description.replace("\r\n", "\n").replace("\n", "<br>")
     }
 
     companion object {
