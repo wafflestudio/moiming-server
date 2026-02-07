@@ -3,21 +3,14 @@ package com.wafflestudio.spring2025.domain.user.service
 import com.wafflestudio.spring2025.config.AwsS3Properties
 import com.wafflestudio.spring2025.domain.auth.exception.AuthenticationRequiredException
 import com.wafflestudio.spring2025.domain.user.dto.core.UserDto
-import com.wafflestudio.spring2025.domain.user.exception.UserErrorCode
-import com.wafflestudio.spring2025.domain.user.exception.UserValidationException
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
-import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.time.Duration
-import java.util.UUID
 
 @Service
 class UserService(
@@ -38,6 +31,7 @@ class UserService(
             profileImage = presignedUrl,
         )
     }
+
 //
 //    fun updateProfileImage(
 //        user: User?,
