@@ -94,8 +94,7 @@ class EmailService(
                         .replace(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
-                        )
-                        .replace("{description}", formatDescription(data.description))
+                        ).replace("{description}", formatDescription(data.description))
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
@@ -123,8 +122,7 @@ class EmailService(
                         .replace(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
-                        )
-                        .replace("{description}", formatDescription(data.description))
+                        ).replace("{description}", formatDescription(data.description))
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
@@ -150,8 +148,7 @@ class EmailService(
                         .replace(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
-                        )
-                        .replace("{description}", formatDescription(data.description))
+                        ).replace("{description}", formatDescription(data.description))
 
                 emailClient.sendEmail(
                     to = data.toEmail,
@@ -175,8 +172,7 @@ class EmailService(
                         .replace(
                             "{registrationDateRange}",
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
-                        )
-                        .replace("{description}", formatDescription(data.description))
+                        ).replace("{description}", formatDescription(data.description))
 
                 emailClient.sendEmail(
                     to = data.toEmail,
@@ -222,8 +218,7 @@ class EmailService(
                 .replace(
                     "{registrationDateRange}",
                     formatRegistrationDateRange(registrationStartsAt, registrationEndsAt),
-                )
-                .replace("{description}", formatDescription(description))
+                ).replace("{description}", formatDescription(description))
                 .replace("{publicId}", eventPublicId)
                 .replace("{registrationPublicId}", registrationPublicId)
 
