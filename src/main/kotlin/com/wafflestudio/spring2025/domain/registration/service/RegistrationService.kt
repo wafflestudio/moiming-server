@@ -308,7 +308,12 @@ class RegistrationService(
                     throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_BANNED)
                 }
                 registration.status = RegistrationStatus.BANNED
-                registrationRepository.save(registration)
+                val saved = registrationRepository.save(registration)
+
+                sendStatusEmailAfterUpdate(
+                    registration = saved,
+                    event = event,
+                )
             }
 
             RegistrationStatus.CANCELED -> {
@@ -319,7 +324,12 @@ class RegistrationService(
                     throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_CANCELED)
                 }
                 registration.status = RegistrationStatus.CANCELED
-                registrationRepository.save(registration)
+                val saved = registrationRepository.save(registration)
+
+                sendStatusEmailAfterUpdate(
+                    registration = saved,
+                    event = event,
+                )
             }
 
             RegistrationStatus.CONFIRMED,
@@ -545,6 +555,46 @@ class RegistrationService(
     }
 
     private fun generateToken(): String = UUID.randomUUID().toString().replace("-", "")
+
+    private fun sendStatusEmailAfterUpdate(
+        registration: Registration,
+        event: Event,
+    ) {
+        val registrationUser =
+            registration.userId?.let { uid ->
+                userRepository.findById(uid).orElse(null)
+            }
+
+        val recipientEmail = registrationUser?.email ?: registration.guestEmail
+        if (recipientEmail.isNullOrBlank()) return
+
+        val confirmedCount =
+            registrationRepository
+                .countByEventIdAndStatus(event.id!!, RegistrationStatus.CONFIRMED)
+                .toInt()
+
+        val emailData =
+            EmailService.RegistrationStatusEmailData(
+                toEmail = recipientEmail,
+                status = registration.status,
+                name = registrationUser?.name ?: registration.guestName ?: "참여자",
+                eventTitle = event.title,
+                startsAt = event.startsAt,
+                endsAt = event.endsAt,
+                location = event.location,
+                confirmedCount = confirmedCount,
+                capacity = event.capacity,
+                registrationStartsAt = event.registrationStartsAt,
+                registrationEndsAt = event.registrationEndsAt,
+                description = event.description,
+                publicId = event.publicId,
+                registrationPublicId = registration.registrationPublicId,
+            )
+
+        afterCommit {
+            emailService.sendRegistrationStatusEmail(emailData)
+        }
+    }
 
     @Transactional
     fun reconcileWaitlist(eventId: Long) {
