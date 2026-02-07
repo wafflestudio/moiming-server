@@ -23,7 +23,7 @@ class ImageService(
     private val s3Props: AwsS3Properties,
 ) {
     fun uploadImage(
-        ownerId: Long,
+        ownerId: Long?,
         image: MultipartFile,
         prefix: String?,
     ): ImageUploadResponse {
@@ -32,7 +32,7 @@ class ImageService(
 
         val directory = sanitizePrefix(prefix)
         val ext = extractExtension(image.originalFilename)
-        val key = listOf(directory, ownerId.toString(), "${UUID.randomUUID()}$ext").joinToString(separator = "/")
+        val key = listOf(directory, ownerId?.toString() ?: "new_user", "${UUID.randomUUID()}$ext").joinToString(separator = "/")
 
         val putRequest =
             PutObjectRequest
