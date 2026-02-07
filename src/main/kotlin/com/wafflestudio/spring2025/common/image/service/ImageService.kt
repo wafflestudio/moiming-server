@@ -119,6 +119,6 @@ class ImageService(
         private const val DEFAULT_EXTENSION = ".jpg"
         private const val MAX_IMAGE_BYTES = 5L * 1024 * 1024
         private val ALLOWED_EXTENSIONS = setOf(".jpg", ".jpeg", ".png", ".webp")
-        private val ALLOWED_PREFIXES = setOf("profile-images")
+        private val ALLOWED_PREFIXES = setOf("profile-image")
     }
 }
