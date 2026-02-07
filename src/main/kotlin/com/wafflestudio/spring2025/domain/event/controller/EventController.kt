@@ -4,6 +4,7 @@ import com.wafflestudio.spring2025.domain.auth.AuthRequired
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.event.dto.request.CreateEventRequest
 import com.wafflestudio.spring2025.domain.event.dto.request.UpdateEventRequest
+import com.wafflestudio.spring2025.domain.event.dto.response.CreateEventResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.MyEventsInfiniteResponse
 import com.wafflestudio.spring2025.domain.event.dto.response.UpdateEventResponse
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.net.URI
 import java.time.Instant
 
 @RestController
@@ -36,7 +36,7 @@ class EventController(
     fun create(
         @LoggedInUser user: User,
         @RequestBody request: CreateEventRequest,
-    ): ResponseEntity<Void> {
+    ): ResponseEntity<CreateEventResponse> {
         val publicId: String =
             eventService.create(
                 title = request.title,
@@ -51,9 +51,7 @@ class EventController(
                 createdBy = user.id!!,
             )
 
-        return ResponseEntity
-            .created(URI.create("/api/events/$publicId"))
-            .build()
+        return ResponseEntity.ok(CreateEventResponse(publicId))
     }
 
     @Operation(summary = "이벤트 상세 조회", description = "이벤트 상세 정보를 조회합니다")
