@@ -16,3 +16,5 @@ open class UserException(
 class UserValidationException(
     error: UserErrorCode,
 ) : UserException(error = error)
+
+class EmailChangeForbiddenException : UserException(error = UserErrorCode.EMAIL_CHANGE_FORBIDDEN)

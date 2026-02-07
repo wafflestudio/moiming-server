@@ -8,19 +8,14 @@ enum class UserErrorCode(
     override val title: String,
     override val message: String,
 ) : DomainErrorCode {
-    PROFILE_IMAGE_EMPTY(
+    PROFILE_IMAGE_NOT_FOUND(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "이미지 파일이 비어있습니다.",
-        message = "업로드된 이미지가 비어있습니다.\n파일을 다시 확인해 주세요.",
+        title = "프로필 이미지를 찾을 수 없습니다.",
+        message = "존재하지 않는 이미지입니다.\n올바른 이미지 경로를 입력해 주세요.",
     ),
-    PROFILE_IMAGE_FORMAT_INVALID(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "이미지 형식이 올바르지 않습니다.",
-        message = "이미지 파일만 업로드할 수 있습니다.",
-    ),
-    PROFILE_IMAGE_TOO_LARGE(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "이미지 크기가 너무 큽니다.",
-        message = "이미지 파일 크기는 5MB 이하만 가능합니다.",
+    EMAIL_CHANGE_FORBIDDEN(
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        title = "이메일은 변경할 수 없습니다.",
+        message = "이메일 주소는 변경이 불가능합니다.",
     ),
 }

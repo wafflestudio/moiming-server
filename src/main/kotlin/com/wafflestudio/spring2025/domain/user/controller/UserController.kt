@@ -3,6 +3,8 @@ package com.wafflestudio.spring2025.domain.user.controller
 import com.wafflestudio.spring2025.domain.auth.AuthRequired
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.user.dto.GetMeResponse
+import com.wafflestudio.spring2025.domain.user.dto.PatchMeRequest
+import com.wafflestudio.spring2025.domain.user.dto.PatchMeResponse
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.service.UserService
 import io.swagger.v3.oas.annotations.Operation
@@ -12,9 +14,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+@AuthRequired
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "User", description = "사용자 API")
@@ -31,8 +36,24 @@ class UserController(
     @AuthRequired
     @GetMapping("/me")
     fun me(
-        @Parameter(hidden = true) @LoggedInUser user: User?,
+        @Parameter(hidden = true) @LoggedInUser user: User,
     ): ResponseEntity<GetMeResponse> = ResponseEntity.ok(userService.me(user))
+
+    @AuthRequired
+    @PatchMapping("/me")
+    fun patchMe(
+        @Parameter(hidden = true) @LoggedInUser user: User,
+        @RequestBody request: PatchMeRequest,
+    ): ResponseEntity<PatchMeResponse> {
+        userService.patchMe(
+            user = user,
+            name = request.name,
+            password = request.password,
+            email = request.email,
+            profileImage = request.profileImage,
+        )
+        return ResponseEntity.ok(userService.me(user))
+    }
 
 //    @Operation(summary = "프로필 이미지 업로드", description = "로그인한 사용자의 프로필 이미지를 업로드(교체)합니다")
 //    @ApiResponses(
