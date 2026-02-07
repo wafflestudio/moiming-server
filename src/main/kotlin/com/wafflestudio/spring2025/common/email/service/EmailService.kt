@@ -66,7 +66,7 @@ class EmailService(
         val toEmail: String,
         val status: RegistrationStatus,
         val name: String,
-        val eventTitle: String,
+        val eventTitle: String?,
         val startsAt: Instant?,
         val endsAt: Instant?,
         val location: String?,
@@ -86,14 +86,15 @@ class EmailService(
                 val htmlContent =
                     loadTemplate("registration-confirmed.html")
                         .replace("{name}", data.name)
-                        .replace("{eventTitle}", data.eventTitle)
-                        .replace("{startsAt}", formatInstant(data.startsAt))
-                        .replace("{endsAt}", formatInstant(data.endsAt))
-                        .replace("{location}", data.location ?: "-")
-                        .replace("{totalCount}", data.totalCount?.toString() ?: "-")
-                        .replace("{capacity}", data.capacity?.toString() ?: "-")
-                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
-                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                        .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                        .replace("{location}", formatLocation(data.location))
+                        .replace("{totalCount}", data.totalCount?.toString() ?: "null")
+                        .replace("{capacity}", data.capacity?.toString() ?: "null")
+                        .replace(
+                            "{registrationDateRange}",
+                            formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
+                        )
                         .replace("{description}", data.description ?: "-")
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
@@ -114,14 +115,15 @@ class EmailService(
                     loadTemplate("registration-waitlisted.html")
                         .replace("{name}", data.name)
                         .replace("{waitingNum}", data.waitingNum?.toString() ?: "-")
-                        .replace("{eventTitle}", data.eventTitle)
-                        .replace("{startsAt}", formatInstant(data.startsAt))
-                        .replace("{endsAt}", formatInstant(data.endsAt))
-                        .replace("{location}", data.location ?: "-")
-                        .replace("{totalCount}", data.totalCount?.toString() ?: "-")
-                        .replace("{capacity}", data.capacity?.toString() ?: "-")
-                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
-                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                        .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                        .replace("{location}", formatLocation(data.location))
+                        .replace("{totalCount}", data.totalCount?.toString() ?: "null")
+                        .replace("{capacity}", data.capacity?.toString() ?: "null")
+                        .replace(
+                            "{registrationDateRange}",
+                            formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
+                        )
                         .replace("{description}", data.description ?: "-")
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
@@ -140,14 +142,15 @@ class EmailService(
                 val htmlContent =
                     loadTemplate("registration-canceled.html")
                         .replace("{name}", data.name)
-                        .replace("{eventTitle}", data.eventTitle)
-                        .replace("{startsAt}", formatInstant(data.startsAt))
-                        .replace("{endsAt}", formatInstant(data.endsAt))
-                        .replace("{location}", data.location ?: "-")
-                        .replace("{totalCount}", data.totalCount?.toString() ?: "-")
-                        .replace("{capacity}", data.capacity?.toString() ?: "-")
-                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
-                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                        .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                        .replace("{location}", formatLocation(data.location))
+                        .replace("{totalCount}", data.totalCount?.toString() ?: "null")
+                        .replace("{capacity}", data.capacity?.toString() ?: "null")
+                        .replace(
+                            "{registrationDateRange}",
+                            formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
+                        )
                         .replace("{description}", data.description ?: "-")
 
                 emailClient.sendEmail(
@@ -164,14 +167,15 @@ class EmailService(
                 val htmlContent =
                     loadTemplate("registration-banned.html")
                         .replace("{name}", data.name)
-                        .replace("{eventTitle}", data.eventTitle)
-                        .replace("{startsAt}", formatInstant(data.startsAt))
-                        .replace("{endsAt}", formatInstant(data.endsAt))
-                        .replace("{location}", data.location ?: "-")
-                        .replace("{totalCount}", data.totalCount?.toString() ?: "-")
-                        .replace("{capacity}", data.capacity?.toString() ?: "-")
-                        .replace("{registrationStartsAt}", formatInstant(data.registrationStartsAt))
-                        .replace("{registrationEndsAt}", formatInstant(data.registrationEndsAt))
+                        .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                        .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                        .replace("{location}", formatLocation(data.location))
+                        .replace("{totalCount}", data.totalCount?.toString() ?: "null")
+                        .replace("{capacity}", data.capacity?.toString() ?: "null")
+                        .replace(
+                            "{registrationDateRange}",
+                            formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
+                        )
                         .replace("{description}", data.description ?: "-")
 
                 emailClient.sendEmail(
@@ -192,7 +196,7 @@ class EmailService(
 
     fun sendWaitlistPromotionEmail(
         toEmail: String,
-        eventTitle: String,
+        eventTitle: String?,
         name: String,
         waitingNum: Int?,
         startsAt: Instant?,
@@ -210,14 +214,15 @@ class EmailService(
             loadTemplate("registration-waitlist-promoted.html")
                 .replace("{name}", name)
                 .replace("{waitingNum}", waitingNum?.toString() ?: "-")
-                .replace("{eventTitle}", eventTitle)
-                .replace("{startsAt}", formatInstant(startsAt))
-                .replace("{endsAt}", formatInstant(endsAt))
-                .replace("{location}", location ?: "-")
-                .replace("{totalCount}", totalCount?.toString() ?: "-")
-                .replace("{capacity}", capacity?.toString() ?: "-")
-                .replace("{registrationStartsAt}", formatInstant(registrationStartsAt))
-                .replace("{registrationEndsAt}", formatInstant(registrationEndsAt))
+                .replace("{eventTitle}", formatEventTitle(eventTitle))
+                .replace("{eventDateRange}", formatEventDateRange(startsAt, endsAt, "~"))
+                .replace("{location}", formatLocation(location))
+                .replace("{totalCount}", totalCount?.toString() ?: "null")
+                .replace("{capacity}", capacity?.toString() ?: "null")
+                .replace(
+                    "{registrationDateRange}",
+                    formatRegistrationDateRange(registrationStartsAt, registrationEndsAt),
+                )
                 .replace("{description}", description ?: "-")
                 .replace("{publicId}", eventPublicId)
                 .replace("{registrationPublicId}", registrationPublicId)
@@ -235,6 +240,43 @@ class EmailService(
 
     private fun formatInstant(instant: Instant?): String =
         instant?.atZone(ZoneId.of("Asia/Seoul"))?.format(KOREAN_DATETIME_FORMATTER) ?: "-"
+
+    private fun formatEventTitle(title: String?): String = title ?: ""
+
+    private fun formatLocation(location: String?): String =
+        if (location.isNullOrBlank()) {
+            "미정"
+        } else {
+            location
+        }
+
+    private fun formatEventDateRange(
+        start: Instant?,
+        end: Instant?,
+        separator: String,
+    ): String {
+        val startText = start?.let { formatInstant(it) } ?: "미정"
+        val endText = end?.let { formatInstant(it) }
+        return if (endText.isNullOrBlank()) {
+            startText
+        } else {
+            "$startText$separator$endText"
+        }
+    }
+
+    private fun formatRegistrationDateRange(
+        start: Instant?,
+        end: Instant?,
+    ): String {
+        val startText = start?.let { formatInstant(it) }
+        val endText = end?.let { formatInstant(it) }
+        return when {
+            startText.isNullOrBlank() && endText.isNullOrBlank() -> ""
+            startText.isNullOrBlank() -> endText ?: ""
+            endText.isNullOrBlank() -> startText
+            else -> "$startText-$endText"
+        }
+    }
 
     companion object {
         private val KOREAN_DATETIME_FORMATTER =
