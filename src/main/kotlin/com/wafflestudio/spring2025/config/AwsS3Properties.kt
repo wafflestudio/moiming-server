@@ -6,5 +6,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class AwsS3Properties(
     val bucket: String,
     val region: String,
-    val presignExpireSeconds: Long = 300,
+    val presignExpireSeconds: Long = 1800,
 )

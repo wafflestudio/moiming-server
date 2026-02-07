@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.auth.service
 
+import com.wafflestudio.spring2025.common.image.service.ImageService
 import com.wafflestudio.spring2025.domain.auth.JwtTokenProvider
 import com.wafflestudio.spring2025.domain.auth.exception.AuthErrorCode
 import com.wafflestudio.spring2025.domain.auth.exception.AuthValidationException
@@ -17,6 +18,7 @@ class AuthService(
     private val identityRepository: UserIdentityRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val jwtBlacklistService: JwtBlacklistService,
+    private val imageService: ImageService,
 ) {
     fun login(
         email: String,
@@ -58,7 +60,12 @@ class AuthService(
                 ),
             )
 
-        return UserDto(user)
+        return UserDto(
+            id = user.id!!,
+            email = user.email,
+            name = user.name,
+            profileImage = user.profileImage?.let { imageService.presignedGetUrl(it) },
+        )
     }
 
     private fun validateEmail(email: String) {

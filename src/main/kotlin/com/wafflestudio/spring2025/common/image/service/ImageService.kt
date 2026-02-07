@@ -96,7 +96,7 @@ class ImageService(
         )
     }
 
-    private fun presignedGetUrl(key: String): String {
+    fun presignedGetUrl(key: String): String {
         val getRequest =
             GetObjectRequest
                 .builder()

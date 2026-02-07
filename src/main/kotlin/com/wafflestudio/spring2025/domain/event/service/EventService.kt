@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.event.service
 
+import com.wafflestudio.spring2025.common.image.service.ImageService
 import com.wafflestudio.spring2025.domain.event.dto.response.CapabilitiesInfo
 import com.wafflestudio.spring2025.domain.event.dto.response.CreatorInfo
 import com.wafflestudio.spring2025.domain.event.dto.response.EventDetailResponse
@@ -29,6 +30,7 @@ class EventService(
     private val eventRepository: EventRepository,
     private val registrationRepository: RegistrationRepository,
     private val userRepository: UserRepository,
+    private val imageService: ImageService,
 ) {
     /**
      * 일정 생성
@@ -189,7 +191,7 @@ class EventService(
                     GuestPreview(
                         id = it.id!!,
                         name = it.name,
-                        profileImage = it.profileImage,
+                        profileImage = it.profileImage?.let { key -> imageService.presignedGetUrl(key) },
                     )
                 }
             }
@@ -212,7 +214,7 @@ class EventService(
                 CreatorInfo(
                     name = creatorUser.name,
                     email = creatorUser.email,
-                    profileImage = creatorUser.profileImage,
+                    profileImage = creatorUser.profileImage?.let { imageService.presignedGetUrl(it) },
                 ),
             viewer = viewer,
             capabilities = capabilities,

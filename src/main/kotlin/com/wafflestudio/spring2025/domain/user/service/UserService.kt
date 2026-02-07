@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.user.service
 
+import com.wafflestudio.spring2025.common.image.service.ImageService
 import com.wafflestudio.spring2025.config.AwsS3Properties
 import com.wafflestudio.spring2025.domain.auth.exception.AuthErrorCode
 import com.wafflestudio.spring2025.domain.auth.exception.AuthValidationException
@@ -13,24 +14,20 @@ import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.mindrot.jbcrypt.BCrypt
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
-import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
-import java.time.Duration
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
     private val s3Client: S3Client,
-    private val presigner: S3Presigner,
     private val s3Props: AwsS3Properties,
+    private val imageService: ImageService,
 ) {
     fun me(user: User?): UserDto {
         if (user == null) throw AuthenticationRequiredException()
 
-        val presignedUrl = user.profileImage?.let { key -> presignedGetUrl(key) }
+        val presignedUrl = user.profileImage?.let { imageService.presignedGetUrl(it) }
 
         return UserDto(
             id = user.id!!,
@@ -38,24 +35,6 @@ class UserService(
             name = user.name,
             profileImage = presignedUrl,
         )
-    }
-
-    private fun presignedGetUrl(key: String): String {
-        val getReq =
-            GetObjectRequest
-                .builder()
-                .bucket(s3Props.bucket)
-                .key(key)
-                .build()
-
-        val presignReq =
-            GetObjectPresignRequest
-                .builder()
-                .signatureDuration(Duration.ofSeconds(s3Props.presignExpireSeconds))
-                .getObjectRequest(getReq)
-                .build()
-
-        return presigner.presignGetObject(presignReq).url().toString()
     }
 
     fun patchMe(

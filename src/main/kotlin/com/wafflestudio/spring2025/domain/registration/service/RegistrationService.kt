@@ -1,6 +1,7 @@
 package com.wafflestudio.spring2025.domain.registration.service
 
 import com.wafflestudio.spring2025.common.email.service.EmailService
+import com.wafflestudio.spring2025.common.image.service.ImageService
 import com.wafflestudio.spring2025.domain.event.exception.EventFullException
 import com.wafflestudio.spring2025.domain.event.exception.EventNotFoundException
 import com.wafflestudio.spring2025.domain.event.model.Event
@@ -44,6 +45,7 @@ class RegistrationService(
     private val eventLockRepository: EventLockRepository,
     private val userRepository: UserRepository,
     private val emailService: EmailService,
+    private val imageService: ImageService,
 ) {
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
     private val tokenValidity = Duration.ofHours(24)
@@ -438,7 +440,7 @@ class RegistrationService(
                         null
                     }
 
-                val profileImage = user?.profileImage
+                val profileImage = user?.profileImage?.let { imageService.presignedGetUrl(it) }
                 val item =
                     EventRegistrationItem(
                         registration = registration,
