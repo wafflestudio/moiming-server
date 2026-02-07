@@ -11,6 +11,7 @@ class PendingUser(
     var email: String,
     var name: String,
     var passwordHash: String,
+    var profileImage: String? = null,
     var verificationCode: String,
     @CreatedDate
     var createdAt: Instant? = null,

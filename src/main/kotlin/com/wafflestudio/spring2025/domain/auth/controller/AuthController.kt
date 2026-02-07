@@ -46,6 +46,7 @@ class AuthController(
             email = signupRequest.email,
             name = signupRequest.name,
             password = signupRequest.password,
+            profileImage = signupRequest.profileImage,
         )
 
         return ResponseEntity.noContent().build()

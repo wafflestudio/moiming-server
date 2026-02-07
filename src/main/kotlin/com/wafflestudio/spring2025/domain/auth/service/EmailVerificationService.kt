@@ -39,6 +39,7 @@ class EmailVerificationService(
         email: String,
         name: String,
         password: String,
+        profileImage: String? = null,
     ) {
         validateEmail(email)
         validateName(name)
@@ -81,6 +82,7 @@ class EmailVerificationService(
                 email = email,
                 name = name,
                 passwordHash = passwordHash,
+                profileImage = profileImage,
                 verificationCode = verificationCode,
                 expiresAt = expiresAt,
             )
@@ -112,6 +114,7 @@ class EmailVerificationService(
                 email = pendingUser.email,
                 name = pendingUser.name,
                 passwordHash = pendingUser.passwordHash,
+                profileImage = pendingUser.profileImage,
             )
 
         val savedUser = userRepository.save(user)

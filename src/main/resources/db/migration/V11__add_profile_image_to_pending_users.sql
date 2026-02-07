@@ -1,0 +1,1 @@
+ALTER TABLE pending_users ADD COLUMN profile_image VARCHAR(512) NULL;
