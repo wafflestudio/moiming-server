@@ -60,6 +60,9 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    mail:
+      enabled: false
 
 cors:
   allowed-origins: http://localhost:3000,http://localhost:5173
