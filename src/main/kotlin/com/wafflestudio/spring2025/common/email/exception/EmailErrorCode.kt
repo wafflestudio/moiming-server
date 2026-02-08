@@ -16,6 +16,6 @@ enum class EmailErrorCode(
     EMAIL_SERVICE_TEMPORARY_DOWN(
         httpStatusCode = HttpStatus.SERVICE_UNAVAILABLE,
         title = "메일링 기능 보수 작업 중입니다.",
-        message = "이메일 회원가입은 인증 없이 바로 가입 완료됩니다.\n참여, 대기 확정, 취소 확인 메일은 발송되지 않습니다."
-    )
+        message = "이메일 회원가입은 인증 없이 바로 가입 완료됩니다.\n참여, 대기 확정, 취소 확인 메일은 발송되지 않습니다.",
+    ),
 }
