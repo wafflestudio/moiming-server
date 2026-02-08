@@ -33,7 +33,7 @@ class AuthService(
     }
 
     fun logout(token: String?) {
-        if (token != null) {
+        if (token != null && jwtTokenProvider.validateToken(token)) {
             jwtBlacklistService.addToBlacklist(token)
         }
     }
