@@ -1,5 +1,7 @@
 package com.wafflestudio.spring2025.domain.auth.controller
 
+import com.wafflestudio.spring2025.common.email.exception.EmailErrorCode
+import com.wafflestudio.spring2025.common.email.exception.EmailServiceUnavailableException
 import com.wafflestudio.spring2025.domain.auth.dto.LoginRequest
 import com.wafflestudio.spring2025.domain.auth.dto.LoginResponse
 import com.wafflestudio.spring2025.domain.auth.dto.SignupRequest
@@ -42,14 +44,23 @@ class AuthController(
     ): ResponseEntity<Void> {
         // profileImage는 회원가입에서 받지 않는 정책이면 null로 고정
 
-        emailVerificationService.createPendingUser(
+//        emailVerificationService.createPendingUser(
+//            email = signupRequest.email,
+//            name = signupRequest.name,
+//            password = signupRequest.password,
+//            profileImage = signupRequest.profileImage,
+//        )
+//
+
+        authService.signup(
             email = signupRequest.email,
             name = signupRequest.name,
             password = signupRequest.password,
             profileImage = signupRequest.profileImage,
         )
 
-        return ResponseEntity.noContent().build()
+        throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_TEMPORARY_DOWN)
+//        return ResponseEntity.noContent().build()
     }
 
     @Operation(
