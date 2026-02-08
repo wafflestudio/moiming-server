@@ -21,8 +21,6 @@ class JavaMailEmailClient(
         fromEmail: String,
         fromName: String,
     ) {
-        logger.info("메일링 임시 중단으로 발송 생략: $to")
-        return
         try {
             val message: MimeMessage = javaMailSender.createMimeMessage()
 

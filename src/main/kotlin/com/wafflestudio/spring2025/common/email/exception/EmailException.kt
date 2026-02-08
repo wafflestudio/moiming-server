@@ -13,6 +13,4 @@ open class EmailException(
         cause = cause,
     )
 
-class EmailServiceUnavailableException(
-    error: EmailErrorCode,
-) : EmailException(error = error)
+class EmailServiceUnavailableException : EmailException(error = EmailErrorCode.EMAIL_SERVICE_UNAVAILABLE)
