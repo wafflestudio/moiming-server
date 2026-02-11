@@ -1,12 +1,16 @@
 package com.wafflestudio.spring2025.common.email.service
 
-import com.wafflestudio.spring2025.common.email.client.EmailClient
 import com.wafflestudio.spring2025.common.email.exception.EmailErrorCode
 import com.wafflestudio.spring2025.common.email.exception.EmailServiceUnavailableException
 import com.wafflestudio.spring2025.config.EmailConfig
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
+import jakarta.mail.MessagingException
+import jakarta.mail.internet.MimeMessage
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
+import org.springframework.mail.MailException
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -15,7 +19,7 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class EmailService(
-    private val emailClient: EmailClient,
+    private val javaMailSender: JavaMailSender,
     private val emailConfig: EmailConfig,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -34,19 +38,38 @@ class EmailService(
             loadTemplate("email-verification.html")
                 .replace("{verificationUrl}", verificationUrl)
 
-        try {
-            emailClient.sendEmail(
-                to = toEmail,
-                subject = "모이밍 이메일 인증",
-                htmlContent = htmlContent,
-                fromEmail = emailConfig.fromEmail,
-                fromName = emailConfig.fromName,
-            )
-        } catch (e: Exception) {
-            throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_UNAVAILABLE)
-        }
+        sendHtmlEmail(
+            to = toEmail,
+            subject = "모이밍 이메일 인증",
+            htmlContent = htmlContent,
+        )
 
         logger.info("Verification email sent to: $toEmail")
+    }
+
+    private fun sendHtmlEmail(
+        to: String,
+        subject: String,
+        htmlContent: String,
+    ) {
+        try {
+            val message: MimeMessage = javaMailSender.createMimeMessage()
+            val helper = MimeMessageHelper(message, "UTF-8")
+
+            helper.setTo(to)
+            helper.setSubject(subject)
+            helper.setText(htmlContent, true)
+            helper.setFrom("${emailConfig.fromName} <${emailConfig.fromEmail}>")
+
+            // AWS SES 샌드박스 모드에서는 발신/수신 주소 모두 사전 인증(Verified)이 필요합니다.
+            javaMailSender.send(message)
+        } catch (e: MessagingException) {
+            logger.error("메일 구성 실패: to={}, subject={}", to, subject, e)
+            throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_UNAVAILABLE)
+        } catch (e: MailException) {
+            logger.error("메일 전송 실패: to={}, subject={}", to, subject, e)
+            throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_UNAVAILABLE)
+        }
     }
 
     /**
@@ -99,12 +122,10 @@ class EmailService(
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
-                emailClient.sendEmail(
+                sendHtmlEmail(
                     to = data.toEmail,
                     subject = "모이밍 참여 신청 확정",
                     htmlContent = htmlContent,
-                    fromEmail = emailConfig.fromEmail,
-                    fromName = emailConfig.fromName,
                 )
 
                 logger.info("신청 확정 정보가 ${data.toEmail} 로 전달되었습니다.")
@@ -127,12 +148,10 @@ class EmailService(
                         .replace("{publicId}", data.publicId ?: "-")
                         .replace("{registrationPublicId}", data.registrationPublicId ?: "-")
 
-                emailClient.sendEmail(
+                sendHtmlEmail(
                     to = data.toEmail,
                     subject = "모이밍 참여 신청 대기",
                     htmlContent = htmlContent,
-                    fromEmail = emailConfig.fromEmail,
-                    fromName = emailConfig.fromName,
                 )
 
                 logger.info("신청 대기 정보가 ${data.toEmail} 로 전달되었습니다.")
@@ -151,12 +170,10 @@ class EmailService(
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
                         ).replace("{description}", formatDescription(data.description))
 
-                emailClient.sendEmail(
+                sendHtmlEmail(
                     to = data.toEmail,
                     subject = "모이밍 참여 신청 취소",
                     htmlContent = htmlContent,
-                    fromEmail = emailConfig.fromEmail,
-                    fromName = emailConfig.fromName,
                 )
 
                 logger.info("신청 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
@@ -175,12 +192,10 @@ class EmailService(
                             formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
                         ).replace("{description}", formatDescription(data.description))
 
-                emailClient.sendEmail(
+                sendHtmlEmail(
                     to = data.toEmail,
                     subject = "모이밍 참여 신청 강제 취소",
                     htmlContent = htmlContent,
-                    fromEmail = emailConfig.fromEmail,
-                    fromName = emailConfig.fromName,
                 )
 
                 logger.info("신청 강제 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
@@ -223,12 +238,10 @@ class EmailService(
                 .replace("{publicId}", eventPublicId)
                 .replace("{registrationPublicId}", registrationPublicId)
 
-        emailClient.sendEmail(
+        sendHtmlEmail(
             to = toEmail,
             subject = "모이밍 참여 신청 대기 후, 확정",
             htmlContent = htmlContent,
-            fromEmail = emailConfig.fromEmail,
-            fromName = emailConfig.fromName,
         )
 
         logger.info("신청 대기 후 확정 정보가 $toEmail 로 전달되었습니다.")
