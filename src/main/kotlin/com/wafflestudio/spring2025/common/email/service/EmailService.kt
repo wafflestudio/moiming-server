@@ -3,9 +3,9 @@ package com.wafflestudio.spring2025.common.email.service
 import com.wafflestudio.spring2025.common.email.exception.EmailErrorCode
 import com.wafflestudio.spring2025.common.email.exception.EmailServiceUnavailableException
 import com.wafflestudio.spring2025.config.EmailConfig
+import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import jakarta.mail.MessagingException
 import jakarta.mail.internet.MimeMessage
-import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
 import org.springframework.mail.MailException
