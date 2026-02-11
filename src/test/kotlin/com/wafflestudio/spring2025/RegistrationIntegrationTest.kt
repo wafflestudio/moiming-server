@@ -4,11 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
 import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
-import com.wafflestudio.spring2025.domain.registration.dto.request.CreateRegistrationRequest
-import com.wafflestudio.spring2025.domain.registration.dto.response.CreateRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
