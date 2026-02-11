@@ -5,10 +5,10 @@ spring:
     password: somepassword
     driver-class-name: com.mysql.cj.jdbc.Driver
   mail:
-    host: smtp.gmail.com
+    host: email-smtp.us-east-1.amazonaws.com
     port: 587
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${AWS_SES_SMTP_USERNAME:YOUR_SES_SMTP_USERNAME}
+    password: ${AWS_SES_SMTP_PASSWORD:YOUR_SES_SMTP_PASSWORD}
     properties:
       mail:
         smtp:
@@ -19,6 +19,13 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:YOUR_AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:YOUR_AWS_SECRET_KEY}
+      region:
+        static: ${AWS_REGION:us-east-1}
   flyway:
     enabled: true
   data:
@@ -31,6 +38,7 @@ jwt:
   expiration-in-ms: 86400000
 
 email:
+  from-email: no-reply@moiming.app
   from-name: 모이밍
 
 oauth:
