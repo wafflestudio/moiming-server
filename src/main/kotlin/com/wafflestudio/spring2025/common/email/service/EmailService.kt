@@ -47,26 +47,6 @@ class EmailService(
         logger.info("Verification email sent to: $toEmail")
     }
 
-    /**
-     * Sends a welcome email after signup
-     */
-    fun sendWelcomeEmail(
-        toEmail: String,
-        nickname: String,
-    ) {
-        val htmlContent =
-            loadTemplate("welcome.html")
-                .replace("{nickname}", nickname)
-
-        sendHtmlEmail(
-            to = toEmail,
-            subject = "모이밍에 오신 것을 환영합니다!",
-            htmlContent = htmlContent,
-        )
-
-        logger.info("Welcome email sent to: $toEmail")
-    }
-
     private fun sendHtmlEmail(
         to: String,
         subject: String,
