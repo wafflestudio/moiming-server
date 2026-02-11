@@ -43,24 +43,14 @@ class AuthController(
         @RequestBody signupRequest: SignupRequest,
     ): ResponseEntity<Void> {
         // profileImage는 회원가입에서 받지 않는 정책이면 null로 고정
-
-//        emailVerificationService.createPendingUser(
-//            email = signupRequest.email,
-//            name = signupRequest.name,
-//            password = signupRequest.password,
-//            profileImage = signupRequest.profileImage,
-//        )
-//
-
-        authService.signup(
+        emailVerificationService.createPendingUser(
             email = signupRequest.email,
             name = signupRequest.name,
             password = signupRequest.password,
             profileImage = signupRequest.profileImage,
         )
 
-        throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_TEMPORARY_DOWN)
-//        return ResponseEntity.noContent().build()
+        return ResponseEntity.noContent().build()
     }
 
     @Operation(
