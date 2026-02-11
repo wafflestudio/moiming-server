@@ -1,7 +1,5 @@
 package com.wafflestudio.spring2025.domain.auth.controller
 
-import com.wafflestudio.spring2025.common.email.exception.EmailErrorCode
-import com.wafflestudio.spring2025.common.email.exception.EmailServiceUnavailableException
 import com.wafflestudio.spring2025.domain.auth.dto.LoginRequest
 import com.wafflestudio.spring2025.domain.auth.dto.LoginResponse
 import com.wafflestudio.spring2025.domain.auth.dto.SignupRequest
