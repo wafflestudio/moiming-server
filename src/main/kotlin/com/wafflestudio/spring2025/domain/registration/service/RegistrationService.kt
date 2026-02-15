@@ -135,7 +135,6 @@ RegistrationService(
                         -> throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_EXISTS)
                     }
                 } else {
-
                     val hostEmail = userRepository.findById(lockedEvent.createdBy).orElse(null)?.email
                     val registrationEmail = userId?.let { userRepository.findById(it).orElse(null)?.email } ?: guestEmail
 
