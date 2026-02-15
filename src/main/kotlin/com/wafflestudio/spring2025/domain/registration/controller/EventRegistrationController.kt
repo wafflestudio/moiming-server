@@ -9,6 +9,8 @@ import com.wafflestudio.spring2025.domain.registration.service.command.CreateReg
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -30,6 +32,22 @@ class EventRegistrationController(
         description =
             "특정 이벤트에 신청합니다. 정원이 남아있으면 CONFIRMED로 등록되고, 정원이 찼으나 대기 명단이 허용된 경우 WAITLISTED로 등록됩니다. " +
                 "정원이 찼고 대기 명단이 비활성화된 경우 신청이 거절됩니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "신청 성공"),
+            ApiResponse(
+                responseCode = "400",
+                description =
+                    "유효하지 않은 요청: REGISTRATION_WRONG_NAME, REGISTRATION_WRONG_EMAIL, NOT_WITHIN_REGISTRATION_WINDOW, " +
+                        "REGISTRATION_BLOCKED_HOST, REGISTRATION_BLOCKED_BANNED",
+            ),
+            ApiResponse(responseCode = "404", description = "이벤트 없음: EVENT_NOT_FOUND"),
+            ApiResponse(
+                responseCode = "409",
+                description = "신청 불가: REGISTRATION_ALREADY_EXISTS, EVENT_FULL",
+            ),
+        ],
     )
     @PostMapping
     fun create(

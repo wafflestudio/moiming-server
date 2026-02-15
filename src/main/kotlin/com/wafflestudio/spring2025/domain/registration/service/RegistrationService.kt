@@ -119,7 +119,7 @@ class RegistrationService(
                 if (existingRegistration != null) {
                     when (existingRegistration.status) {
                         RegistrationStatus.BANNED ->
-                            throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_INVALID_STATUS)
+                            throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_BLOCKED_BANNED)
 
                         RegistrationStatus.CANCELED -> {
                             existingRegistration.status = status
@@ -130,8 +130,11 @@ class RegistrationService(
                             registrationRepository.save(existingRegistration)
                         }
 
+                        RegistrationStatus.HOST -> {
+                            throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_BLOCKED_HOST)
+                        }
+
                         RegistrationStatus.CONFIRMED,
-                        RegistrationStatus.HOST,
                         RegistrationStatus.WAITLISTED,
                         -> throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_EXISTS)
                     }
