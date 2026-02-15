@@ -39,13 +39,16 @@ class EventRegistrationController(
             ApiResponse(
                 responseCode = "400",
                 description =
-                    "유효하지 않은 요청: REGISTRATION_WRONG_NAME, REGISTRATION_WRONG_EMAIL, NOT_WITHIN_REGISTRATION_WINDOW, " +
-                        "REGISTRATION_BLOCKED_HOST, REGISTRATION_BLOCKED_BANNED",
+                    "유효하지 않은 요청: 3003(Wrong guest name), 3004(Wrong guest email), 2204(Invalid registration window)",
             ),
-            ApiResponse(responseCode = "404", description = "이벤트 없음: EVENT_NOT_FOUND"),
+            ApiResponse(
+                responseCode = "403",
+                description = "권한 없음: 3006(Banned user cannot register)",
+            ),
+            ApiResponse(responseCode = "404", description = "이벤트 없음: 2001(Event not found)"),
             ApiResponse(
                 responseCode = "409",
-                description = "신청 불가: REGISTRATION_ALREADY_EXISTS, EVENT_FULL",
+                description = "신청 불가: 3001(Registration already exists), 3005(Host cannot register), 2301(Event is full)",
             ),
         ],
     )

@@ -61,13 +61,13 @@ enum class RegistrationErrorCode(
     ),
 
     REGISTRATION_BLOCKED_HOST(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
+        httpStatusCode = HttpStatus.CONFLICT,
         title = "주최자는 신청할 수 없습니다.",
         message = "해당 모임의 주최자는\n참여 신청할 수 없습니다.",
     ),
 
     REGISTRATION_BLOCKED_BANNED(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
+        httpStatusCode = HttpStatus.FORBIDDEN,
         title = "차단된 신청입니다.",
         message = "차단된 신청은\n다시 신청할 수 없습니다.",
     ),
