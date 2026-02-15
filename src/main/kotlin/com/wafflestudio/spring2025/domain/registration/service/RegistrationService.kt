@@ -39,7 +39,8 @@ import java.time.Instant
 import java.util.UUID
 
 @Service
-class RegistrationService(
+class
+RegistrationService(
     private val registrationRepository: RegistrationRepository,
     private val eventRepository: EventRepository,
     private val eventLockRepository: EventLockRepository,
@@ -119,23 +120,28 @@ class RegistrationService(
                 if (existingRegistration != null) {
                     when (existingRegistration.status) {
                         RegistrationStatus.BANNED ->
-                            throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_INVALID_STATUS)
+                            throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_BLOCKED_BANNED)
 
                         RegistrationStatus.CANCELED -> {
-                            existingRegistration.status = status
-                            if (userId == null) {
-                                existingRegistration.guestName = guestName
-                                existingRegistration.guestEmail = guestEmail
-                            }
-                            registrationRepository.save(existingRegistration)
+                            TODO("CANCELED 필드는 삭제 예정이라 일단 이렇게 처리")
+                        }
+
+                        RegistrationStatus.HOST -> {
+                            existingRegistration // HOST로 되어있는 참여신청자가 없어 그냥 넘어가는 코드
                         }
 
                         RegistrationStatus.CONFIRMED,
-                        RegistrationStatus.HOST,
                         RegistrationStatus.WAITLISTED,
                         -> throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_EXISTS)
                     }
                 } else {
+                    val hostEmail = userRepository.findById(lockedEvent.createdBy).orElse(null)?.email
+                    val registrationEmail = userId?.let { userRepository.findById(it).orElse(null)?.email } ?: guestEmail
+
+                    if (hostEmail != null && hostEmail == registrationEmail) {
+                        throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_BLOCKED_HOST)
+                    }
+
                     val registration =
                         if (userId == null) {
                             Registration(
@@ -157,7 +163,6 @@ class RegistrationService(
                     registrationRepository.save(registration)
                 }
             } catch (e: DuplicateKeyException) {
-                // ✅ 유니크 인덱스(이벤트+유저 / 이벤트+게스트이메일)로 막힌 경우
                 throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_EXISTS)
             }
 
