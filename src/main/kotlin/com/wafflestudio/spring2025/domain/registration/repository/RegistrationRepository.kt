@@ -144,11 +144,11 @@ interface RegistrationRepository :
 
     @Query(
         """
-        SELECT ranked.registration_public_id AS registrationPublicId,
-               ranked.waitlistNumber AS waitlistNumber
+        SELECT ranked.registration_public_id AS registration_public_id,
+               ranked.waitlist_number AS waitlist_number
         FROM (
             SELECT r.registration_public_id,
-                   ROW_NUMBER() OVER (ORDER BY r.created_at ASC, r.registration_public_id ASC) AS waitlistNumber
+                   ROW_NUMBER() OVER (ORDER BY r.created_at ASC, r.registration_public_id ASC) AS waitlist_number
             FROM registrations r
             WHERE r.event_id = :eventId AND r.status = :status
         ) ranked
