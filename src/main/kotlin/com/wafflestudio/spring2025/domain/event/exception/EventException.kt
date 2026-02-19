@@ -19,8 +19,6 @@ class EventForbiddenException : EventException(error = EventErrorCode.NOT_EVENT_
 
 class EventFullException : EventException(error = EventErrorCode.EVENT_FULL)
 
-class EventDeadlinePassedException : EventException(error = EventErrorCode.EVENT_DEADLINE_PASSED)
-
 class EventValidationException(
     error: EventErrorCode,
 ) : EventException(error = error)

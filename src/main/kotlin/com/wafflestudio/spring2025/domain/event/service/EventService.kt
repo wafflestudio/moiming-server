@@ -356,38 +356,56 @@ class EventService(
         capacity: Int?,
         registrationStartsAt: Instant?,
         registrationEndsAt: Instant?,
+        now: Instant = Instant.now(),
     ) {
+        // 제목 검증
         if (title.isBlank()) {
             throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
         }
 
+        // 정원 검증
+        if (capacity == null) {
+            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_REQUIRED)
+        }
+        if (capacity <= 0) {
+            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
+        }
+
+        // 모임 시간 검증
+        if (startsAt != null && startsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.EVENT_STARTS_IN_PAST)
+        }
+        if (endsAt != null && endsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.EVENT_ENDS_IN_PAST)
+        }
         if (startsAt != null && endsAt != null && !startsAt.isBefore(endsAt)) {
             throw EventValidationException(EventErrorCode.EVENT_TIME_RANGE_INVALID)
         }
 
-        if (capacity != null && capacity <= 0) {
-            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
+        // 신청 기간 검증
+        if (registrationStartsAt != null && registrationStartsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_IN_PAST)
         }
-
+        if (registrationEndsAt != null && registrationEndsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_IN_PAST)
+        }
         if (registrationStartsAt != null &&
             registrationEndsAt != null &&
             registrationStartsAt.isAfter(registrationEndsAt)
         ) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_BEFORE_STARTS)
+            throw EventValidationException(EventErrorCode.REGISTRATION_TIME_RANGE_INVALID)
         }
-
-        if (registrationEndsAt != null &&
-            startsAt != null &&
-            registrationEndsAt.isAfter(startsAt)
-        ) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
-        }
-
         if (registrationStartsAt != null &&
             startsAt != null &&
             registrationStartsAt.isAfter(startsAt)
         ) {
             throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_AFTER_EVENT_START)
+        }
+        if (registrationEndsAt != null &&
+            startsAt != null &&
+            registrationEndsAt.isAfter(startsAt)
+        ) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
         }
     }
 
