@@ -8,6 +8,7 @@ import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.repository.EventLockRepository
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.dto.response.CreateRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.response.DeleteRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.EventRegistrationItem
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetEventRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetMyRegistrationsResponse
@@ -24,6 +25,7 @@ import com.wafflestudio.spring2025.domain.registration.model.Registration
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import com.wafflestudio.spring2025.domain.registration.service.command.CreateRegistrationCommand
+import com.wafflestudio.spring2025.domain.registration.service.command.DeleteRegistrationCommand
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.dao.DuplicateKeyException
@@ -70,6 +72,100 @@ RegistrationService(
                     guestEmail = command.email,
                 )
         }
+
+    @Transactional
+    fun delete(command: DeleteRegistrationCommand): DeleteRegistrationResponse {
+        when (command) {
+            is DeleteRegistrationCommand.Member ->
+                deleteInternal(
+                    userId = command.userId,
+                    guestName = null,
+                    guestEmail = null,
+                    registrationPublicId = command.registrationPublicId,
+                )
+
+            is DeleteRegistrationCommand.Guest ->
+                deleteInternal(
+                    userId = null,
+                    guestName = command.guestName,
+                    guestEmail = command.guestEmail,
+                    registrationPublicId = command.registrationPublicId,
+                )
+        }
+        return DeleteRegistrationResponse()
+    }
+
+    private fun deleteInternal(
+        userId: Long?,
+        guestName: String?,
+        guestEmail: String?,
+        registrationPublicId: String,
+    ) {
+        val registration =
+            registrationRepository.findByRegistrationPublicId(registrationPublicId)
+                ?: throw RegistrationNotFoundException()
+
+        val event =
+            eventRepository.findById(registration.eventId).orElseThrow { EventNotFoundException() }
+
+        if (userId != null) {
+            if (registration.userId != userId) {
+                throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_DELETE_UNAUTHORIZED)
+            }
+        } else {
+            if (registration.userId != null ||
+                registration.guestName != guestName ||
+                registration.guestEmail != guestEmail
+            ) {
+                throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_DELETE_UNAUTHORIZED)
+            }
+        }
+
+        val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
+        registrationRepository.deleteById(requireNotNull(registration.id))
+
+        if (wasConfirmed) {
+            reconcileWaitlist(registration.eventId)
+        }
+
+        val registrationUser =
+            registration.userId?.let { id ->
+                userRepository.findById(id).orElse(null)
+            }
+
+        val recipientEmail = registrationUser?.email ?: registration.guestEmail
+
+        if (!recipientEmail.isNullOrBlank()) {
+            val confirmedCount =
+                registrationRepository
+                    .countByEventIdAndStatus(event.id!!, RegistrationStatus.CONFIRMED)
+                    .toInt()
+            val waitlistedCount =
+                registrationRepository
+                    .countByEventIdAndStatus(event.id!!, RegistrationStatus.WAITLISTED)
+                    .toInt()
+            val totalCount = confirmedCount + waitlistedCount
+
+            val emailData =
+                EmailService.RegistrationDeleteEmailData(
+                    toEmail = recipientEmail,
+                    name = registration.guestName ?: registrationUser?.name ?: "참여자",
+                    eventTitle = event.title,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    totalCount = totalCount,
+                    capacity = event.capacity,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
+                    description = event.description,
+                )
+
+            afterCommit {
+                emailService.sendRegistrationDeleteEmail(emailData)
+            }
+        }
+    }
 
     private fun createInternal(
         userId: Long?,

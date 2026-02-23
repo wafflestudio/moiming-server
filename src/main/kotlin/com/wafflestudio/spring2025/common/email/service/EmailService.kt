@@ -104,6 +104,20 @@ class EmailService(
         val waitingNum: Int? = null,
     )
 
+    data class RegistrationDeleteEmailData(
+        val toEmail: String,
+        val name: String,
+        val eventTitle: String?,
+        val startsAt: Instant?,
+        val endsAt: Instant?,
+        val location: String?,
+        val totalCount: Int?,
+        val capacity: Int?,
+        val registrationStartsAt: Instant?,
+        val registrationEndsAt: Instant?,
+        val description: String?,
+    )
+
     fun sendRegistrationStatusEmail(data: RegistrationStatusEmailData) {
         when (data.status) {
             RegistrationStatus.CONFIRMED -> {
@@ -182,6 +196,29 @@ class EmailService(
                 logger.info("신청 상태가 ${data.status} 이라 메일을 전송하지 않았습니다: ${data.toEmail}")
             }
         }
+    }
+
+    fun sendRegistrationDeleteEmail(data: RegistrationDeleteEmailData) {
+        val htmlContent =
+            loadTemplate("registration-delete.html")
+                .replace("{name}", data.name)
+                .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                .replace("{location}", formatLocation(data.location))
+                .replace("{totalCount}", data.totalCount?.toString() ?: "null")
+                .replace("{capacity}", data.capacity?.toString() ?: "null")
+                .replace(
+                    "{registrationDateRange}",
+                    formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
+                ).replace("{description}", formatDescription(data.description))
+
+        sendHtmlEmail(
+            to = data.toEmail,
+            subject = "모이밍 참여 신청 취소",
+            htmlContent = htmlContent,
+        )
+
+        logger.info("신청 삭제 정보가 ${data.toEmail} 로 전달되었습니다.")
     }
 
     fun sendWaitlistPromotionEmail(

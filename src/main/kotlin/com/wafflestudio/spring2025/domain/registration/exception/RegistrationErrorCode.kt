@@ -29,6 +29,12 @@ enum class RegistrationErrorCode(
         message = "모임의 관리자 혹은 신청자 본인만\n신청 상태를 변경할 수 있습니다.",
     ),
 
+    REGISTRATION_DELETE_UNAUTHORIZED(
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        title = "신청 삭제 권한이 없습니다.",
+        message = "모임의 관리자 혹은 신청자 본인만\n신청을 삭제할 수 있습니다.",
+    ),
+
     REGISTRATION_VIEW_UNAUTHORIZED(
         httpStatusCode = HttpStatus.FORBIDDEN,
         title = "열람 권한이 없습니다.",
