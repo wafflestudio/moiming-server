@@ -153,7 +153,8 @@ function buildNotification(e) {
         `${title}\n` +
         `🔗 ${url}`;
 
-    return { recipients: uniq(recipients), text };
+    const sender = e.sender?.login;
+    return { recipients: uniq(recipients).filter((r) => r !== sender), text };
 }
 
 /* =====================
