@@ -85,12 +85,6 @@ enum class RegistrationErrorCode(
         message = "동일한 모임에 중복으로\n신청할 수 없습니다.",
     ),
 
-    REGISTRATION_ALREADY_CANCELED(
-        httpStatusCode = HttpStatus.CONFLICT,
-        title = "이미 취소된 신청입니다.",
-        message = "해당 신청은 이미 취소되었습니다.",
-    ),
-
     REGISTRATION_ALREADY_BANNED(
         httpStatusCode = HttpStatus.CONFLICT,
         title = "차단된 신청입니다.",

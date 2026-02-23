@@ -78,7 +78,7 @@ class EventRegistrationController(
 
     @Operation(
         summary = "이벤트 신청 목록 조회",
-        description = "특정 이벤트에 속한 신청 목록을 조회합니다. 신청 상태(CONFIRMED/WAITLISTED/CANCELED)와 신청 시각을 포함해 반환합니다.",
+        description = "특정 이벤트에 속한 신청 목록을 조회합니다. 신청 상태(CONFIRMED/WAITLISTED/BANNED)와 신청 시각을 포함해 반환합니다.",
     )
     @GetMapping
     fun list(

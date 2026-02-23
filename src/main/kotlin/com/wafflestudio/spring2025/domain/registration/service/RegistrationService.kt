@@ -122,10 +122,6 @@ RegistrationService(
                         RegistrationStatus.BANNED ->
                             throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_BLOCKED_BANNED)
 
-                        RegistrationStatus.CANCELED -> {
-                            TODO("CANCELED 필드는 삭제 예정이라 일단 이렇게 처리")
-                        }
-
                         RegistrationStatus.HOST -> {
                             existingRegistration // HOST로 되어있는 참여신청자가 없어 그냥 넘어가는 코드
                         }
@@ -227,7 +223,6 @@ RegistrationService(
             RegistrationStatus.HOST -> RegistrationStatusResponse.CONFIRMED
             RegistrationStatus.CONFIRMED -> RegistrationStatusResponse.CONFIRMED
             RegistrationStatus.WAITLISTED -> RegistrationStatusResponse.WAITLISTED
-            RegistrationStatus.CANCELED -> RegistrationStatusResponse.CANCELED
             RegistrationStatus.BANNED -> RegistrationStatusResponse.BANNED
         }
 
@@ -309,9 +304,6 @@ RegistrationService(
         if (status == RegistrationStatus.BANNED && !isHost) {
             throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
         }
-        if (status == RegistrationStatus.CANCELED && !isHost && !isRegistrant && userId != null) {
-            throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
-        }
 
         val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
         when (status) {
@@ -320,22 +312,6 @@ RegistrationService(
                     throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_BANNED)
                 }
                 registration.status = RegistrationStatus.BANNED
-                val saved = registrationRepository.save(registration)
-
-                sendStatusEmailAfterUpdate(
-                    registration = saved,
-                    event = event,
-                )
-            }
-
-            RegistrationStatus.CANCELED -> {
-                if (registration.status == RegistrationStatus.BANNED) {
-                    throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_INVALID_STATUS)
-                }
-                if (registration.status == RegistrationStatus.CANCELED) {
-                    throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_CANCELED)
-                }
-                registration.status = RegistrationStatus.CANCELED
                 val saved = registrationRepository.save(registration)
 
                 sendStatusEmailAfterUpdate(
@@ -483,7 +459,6 @@ RegistrationService(
             "confirmed" -> RegistrationStatus.CONFIRMED
             // "waiting" 문자열은 혹시 남아있는 클라이언트 호환 위해 두고 싶으면 유지 가능
             "waiting", "waitlisted" -> RegistrationStatus.WAITLISTED
-            "canceled" -> RegistrationStatus.CANCELED
             "banned" -> RegistrationStatus.BANNED
             else -> throw RegistrationValidationException(RegistrationErrorCode.INVALID_REGISTRATION_QUERY_PARAMETER)
         }

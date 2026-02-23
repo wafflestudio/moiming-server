@@ -4,6 +4,5 @@ enum class RegistrationStatus {
     HOST,
     CONFIRMED,
     WAITLISTED,
-    CANCELED,
     BANNED,
 }

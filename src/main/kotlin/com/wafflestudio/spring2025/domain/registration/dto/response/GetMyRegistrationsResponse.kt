@@ -57,7 +57,7 @@ data class MyRegistrationItem(
 enum class MyRegistrationStatus {
     CONFIRMED,
     WAITLISTED,
-    CANCELED,
+    BANNED,
     ;
 
     companion object {
@@ -69,9 +69,7 @@ enum class MyRegistrationStatus {
 
                 RegistrationStatus.WAITLISTED -> WAITLISTED
 
-                RegistrationStatus.CANCELED,
-                RegistrationStatus.BANNED,
-                -> CANCELED
+                RegistrationStatus.BANNED -> BANNED
             }
     }
 }

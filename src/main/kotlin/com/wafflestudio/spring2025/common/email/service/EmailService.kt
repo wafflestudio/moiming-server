@@ -156,28 +156,6 @@ class EmailService(
 
                 logger.info("신청 대기 정보가 ${data.toEmail} 로 전달되었습니다.")
             }
-            RegistrationStatus.CANCELED -> {
-                val htmlContent =
-                    loadTemplate("registration-canceled.html")
-                        .replace("{name}", data.name)
-                        .replace("{eventTitle}", formatEventTitle(data.eventTitle))
-                        .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
-                        .replace("{location}", formatLocation(data.location))
-                        .replace("{totalCount}", data.totalCount?.toString() ?: "null")
-                        .replace("{capacity}", data.capacity?.toString() ?: "null")
-                        .replace(
-                            "{registrationDateRange}",
-                            formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
-                        ).replace("{description}", formatDescription(data.description))
-
-                sendHtmlEmail(
-                    to = data.toEmail,
-                    subject = "모이밍 참여 신청 취소",
-                    htmlContent = htmlContent,
-                )
-
-                logger.info("신청 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
-            }
             RegistrationStatus.BANNED -> {
                 val htmlContent =
                     loadTemplate("registration-banned.html")
