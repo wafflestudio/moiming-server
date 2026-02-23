@@ -1,0 +1,33 @@
+name: GitHub -> Slack DM Notify
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, review_requested, assigned]
+  pull_request_review:
+    types: [submitted]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Send Slack DMs
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_USER_MAP: ${{ secrets.SLACK_USER_MAP }}
+        run: node .github/scripts/slack-dm-notify.mjs
