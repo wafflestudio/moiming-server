@@ -28,46 +28,67 @@ enum class EventErrorCode(
     ),
 
     // 22xx - Validation / Bad Request
+    // 제목 검증
     EVENT_TITLE_BLANK(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "제목을 입력해 주세요.",
         message = "모임 제목은 비워둘 수 없습니다.",
     ),
 
-    EVENT_TIME_RANGE_INVALID(
+    // 정원 검증
+    EVENT_CAPACITY_REQUIRED(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모임 시각이 유효하지 않습니다.",
-        message = "종료 시각이 시작 시각보다\n빠를 수 없습니다.",
+        title = "정원을 입력해 주세요.",
+        message = "정원은 필수값입니다.",
     ),
-
     EVENT_CAPACITY_INVALID(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "정원이 유효하지 않습니다.",
         message = "정원은 1 이상이어야 합니다.",
     ),
 
-    REGISTRATION_ENDS_BEFORE_STARTS(
+    // 모임 시간 검증
+    EVENT_STARTS_IN_PAST(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모집 기간이 유효하지 않습니다.",
-        message = "모집 마감 시각이 모집 시작 시각보다\n빠를 수 없습니다.",
+        title = "모임 시작 시간이 유효하지 않습니다.",
+        message = "모임 시작 시간은\n현재 시간 이후여야 합니다.",
+    ),
+    EVENT_ENDS_IN_PAST(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "모임 종료 시간이 유효하지 않습니다.",
+        message = "모임 종료 시간은\n현재 시간 이후여야 합니다.",
+    ),
+    EVENT_TIME_RANGE_INVALID(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "모임 시간이 유효하지 않습니다.",
+        message = "모임 종료 시간이 모임 시작 시간보다\n빠를 수 없습니다.",
     ),
 
-    REGISTRATION_ENDS_AFTER_EVENT_START(
+    // 신청 기간 검증
+    REGISTRATION_STARTS_IN_PAST(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모집 기간이 유효하지 않습니다.",
-        message = "모집 마감 시각이 모임 시작 시각보다\n늦을 수 없습니다.",
+        title = "신청 시작 시간이 유효하지 않습니다.",
+        message = "신청 시작 시간은\n현재 시간 이후여야 합니다.",
     ),
-
+    REGISTRATION_ENDS_IN_PAST(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "신청 마감 시간이 유효하지 않습니다.",
+        message = "신청 마감 시간은\n현재 시간 이후여야 합니다.",
+    ),
+    REGISTRATION_TIME_RANGE_INVALID(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "신청 기간이 유효하지 않습니다.",
+        message = "신청 마감 시간이 신청 시작 시간보다\n빠를 수 없습니다.",
+    ),
     REGISTRATION_STARTS_AFTER_EVENT_START(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모집 기간이 유효하지 않습니다.",
-        message = "모집 시작 시각이 모임 시작 시각보다\n늦을 수 없습니다.",
+        title = "신청 기간이 유효하지 않습니다.",
+        message = "신청 시작 시간이 모임 시작 시간보다\n빨라야 합니다.",
     ),
-
-    EVENT_DEADLINE_PASSED(
+    REGISTRATION_ENDS_AFTER_EVENT_START(
         httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모집이 마감되었습니다.",
-        message = "모집 마감 시각이 지나\n더 이상 신청할 수 없습니다.",
+        title = "신청 기간이 유효하지 않습니다.",
+        message = "신청 마감 시간이 모임 시작 시간보다\n빨라야 합니다.",
     ),
 
     // 23xx - Conflict

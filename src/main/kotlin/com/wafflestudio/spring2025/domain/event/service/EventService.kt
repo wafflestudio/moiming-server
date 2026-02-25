@@ -179,20 +179,31 @@ class EventService(
                 registrationStatus = RegistrationStatus.CONFIRMED,
             )
 
+        val previewRegs = confirmedRegs.take(5)
+
         val previewUserIds =
-            confirmedRegs.mapNotNull { it.userId }.distinct().take(5)
+            previewRegs.mapNotNull { it.userId }.distinct()
 
         val usersById =
             userRepository.findAllById(previewUserIds).associateBy { it.id!! }
 
         val guestsPreview =
-            previewUserIds.mapNotNull { uid ->
-                usersById[uid]?.let {
+            previewRegs.mapNotNull { reg ->
+                val uid = reg.userId
+                if (uid == null) {
                     GuestPreview(
-                        id = it.id!!,
-                        name = it.name,
-                        profileImage = it.profileImage?.let { key -> imageService.presignedGetUrl(key) },
+                        id = null,
+                        name = reg.guestName ?: "참여자",
+                        profileImage = null,
                     )
+                } else {
+                    usersById[uid]?.let {
+                        GuestPreview(
+                            id = it.id!!,
+                            name = it.name,
+                            profileImage = it.profileImage?.let { key -> imageService.presignedGetUrl(key) },
+                        )
+                    }
                 }
             }
 
@@ -356,38 +367,56 @@ class EventService(
         capacity: Int?,
         registrationStartsAt: Instant?,
         registrationEndsAt: Instant?,
+        now: Instant = Instant.now(),
     ) {
+        // 제목 검증
         if (title.isBlank()) {
             throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
         }
 
+        // 정원 검증
+        if (capacity == null) {
+            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_REQUIRED)
+        }
+        if (capacity <= 0) {
+            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
+        }
+
+        // 모임 시간 검증
+        if (startsAt != null && startsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.EVENT_STARTS_IN_PAST)
+        }
+        if (endsAt != null && endsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.EVENT_ENDS_IN_PAST)
+        }
         if (startsAt != null && endsAt != null && !startsAt.isBefore(endsAt)) {
             throw EventValidationException(EventErrorCode.EVENT_TIME_RANGE_INVALID)
         }
 
-        if (capacity != null && capacity <= 0) {
-            throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
+        // 신청 기간 검증
+        if (registrationStartsAt != null && registrationStartsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_IN_PAST)
         }
-
+        if (registrationEndsAt != null && registrationEndsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_IN_PAST)
+        }
         if (registrationStartsAt != null &&
             registrationEndsAt != null &&
             registrationStartsAt.isAfter(registrationEndsAt)
         ) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_BEFORE_STARTS)
+            throw EventValidationException(EventErrorCode.REGISTRATION_TIME_RANGE_INVALID)
         }
-
-        if (registrationEndsAt != null &&
-            startsAt != null &&
-            registrationEndsAt.isAfter(startsAt)
-        ) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
-        }
-
         if (registrationStartsAt != null &&
             startsAt != null &&
             registrationStartsAt.isAfter(startsAt)
         ) {
             throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_AFTER_EVENT_START)
+        }
+        if (registrationEndsAt != null &&
+            startsAt != null &&
+            registrationEndsAt.isAfter(startsAt)
+        ) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
         }
     }
 
