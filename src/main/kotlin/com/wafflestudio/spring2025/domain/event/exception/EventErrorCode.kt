@@ -78,7 +78,7 @@ enum class EventErrorCode(
     REGISTRATION_TIME_RANGE_INVALID(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "신청 기간이 유효하지 않습니다.",
-        message = "신청 마감 시간이 모집 시작 시간보다\n빠를 수 없습니다.",
+        message = "신청 마감 시간이 신청 시작 시간보다\n빠를 수 없습니다.",
     ),
     REGISTRATION_STARTS_AFTER_EVENT_START(
         httpStatusCode = HttpStatus.BAD_REQUEST,

@@ -22,7 +22,7 @@ data class CreateEventRequest(
     )
     val endsAt: Instant? = null,
     @Schema(description = "정원", example = "30")
-    val capacity: Int? = null,
+    val capacity: Int,
     @Schema(description = "대기 명단 사용 여부", example = "true")
     val waitlistEnabled: Boolean,
     @Schema(

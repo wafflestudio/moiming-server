@@ -179,20 +179,31 @@ class EventService(
                 registrationStatus = RegistrationStatus.CONFIRMED,
             )
 
+        val previewRegs = confirmedRegs.take(5)
+
         val previewUserIds =
-            confirmedRegs.mapNotNull { it.userId }.distinct().take(5)
+            previewRegs.mapNotNull { it.userId }.distinct()
 
         val usersById =
             userRepository.findAllById(previewUserIds).associateBy { it.id!! }
 
         val guestsPreview =
-            previewUserIds.mapNotNull { uid ->
-                usersById[uid]?.let {
+            previewRegs.mapNotNull { reg ->
+                val uid = reg.userId
+                if (uid == null) {
                     GuestPreview(
-                        id = it.id!!,
-                        name = it.name,
-                        profileImage = it.profileImage?.let { key -> imageService.presignedGetUrl(key) },
+                        id = null,
+                        name = reg.guestName ?: "참여자",
+                        profileImage = null,
                     )
+                } else {
+                    usersById[uid]?.let {
+                        GuestPreview(
+                            id = it.id!!,
+                            name = it.name,
+                            profileImage = it.profileImage?.let { key -> imageService.presignedGetUrl(key) },
+                        )
+                    }
                 }
             }
 
