@@ -5,7 +5,6 @@ import com.wafflestudio.spring2025.domain.registration.dto.request.CreateRegistr
 import com.wafflestudio.spring2025.domain.registration.dto.response.CreateRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetEventRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
-import com.wafflestudio.spring2025.domain.registration.service.command.CreateRegistrationCommand
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -58,21 +57,13 @@ class EventRegistrationController(
         @RequestBody request: CreateRegistrationRequest,
         @LoggedInUser user: User?,
     ): ResponseEntity<CreateRegistrationResponse> {
-        val command =
-            if (user != null) {
-                CreateRegistrationCommand.Member(
-                    userId = user.id!!,
-                    eventId = eventId,
-                )
-            } else {
-                CreateRegistrationCommand.Guest(
-                    eventId = eventId,
-                    name = requireNotNull(request.guestName) { "guestName is required" },
-                    email = requireNotNull(request.guestEmail) { "guestEmail is required" },
-                )
-            }
-
-        val registration = registrationService.create(command)
+        val registration =
+            registrationService.create(
+                eventId = eventId,
+                userId = user?.id,
+                guestName = request.guestName,
+                guestEmail = request.guestEmail,
+            )
         return ResponseEntity.ok(registration)
     }
 

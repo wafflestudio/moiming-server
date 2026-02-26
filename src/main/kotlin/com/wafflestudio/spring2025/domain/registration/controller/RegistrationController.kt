@@ -7,10 +7,8 @@ import com.wafflestudio.spring2025.domain.registration.dto.response.DeleteRegist
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.PatchRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationErrorCode
-import com.wafflestudio.spring2025.domain.registration.exception.RegistrationException
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationValidationException
 import com.wafflestudio.spring2025.domain.registration.service.RegistrationService
-import com.wafflestudio.spring2025.domain.registration.service.command.DeleteRegistrationCommand
 import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -67,21 +65,13 @@ class RegistrationController(
         @RequestBody request: DeleteRegistrationRequest,
         @LoggedInUser user: User?,
     ): ResponseEntity<DeleteRegistrationResponse> {
-        val command =
-            if (user != null) {
-                DeleteRegistrationCommand.Member(
-                    userId = user.id!!,
-                    registrationPublicId = registrationId,
-                )
-            } else {
-                DeleteRegistrationCommand.Guest(
-                    guestName = request.guestName ?: throw RegistrationException(RegistrationErrorCode.REGISTRATION_WRONG_NAME),
-                    guestEmail = request.guestEmail ?: throw RegistrationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL),
-                    registrationPublicId = registrationId,
-                )
-            }
-
-        val response = registrationService.delete(command)
+        val response =
+            registrationService.delete(
+                registrationPublicId = registrationId,
+                userId = user?.id,
+                guestName = request.guestName,
+                guestEmail = request.guestEmail,
+            )
 
         return ResponseEntity.ok(response)
     }
