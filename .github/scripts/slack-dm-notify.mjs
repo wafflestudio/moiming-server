@@ -45,41 +45,62 @@ const ghToSlack = (login) => userMap[login] || null;
 /* =====================
    3. Slack API helpers
 ===================== */
-async function openDM(userId) {
-    const res = await fetch(
-        "https://slack.com/api/conversations.open",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ users: userId }),
-        }
-    );
+async function slackPost(endpoint, body) {
+    const res = await fetch(`https://slack.com/api/${endpoint}`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+    if (res.status === 429) {
+        const err = new Error("ratelimited");
+        err.retryAfterMs = parseInt(res.headers.get("Retry-After") || "5", 10) * 1000;
+        throw err;
+    }
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
-    return json.channel.id;
+    return json;
 }
 
-async function postMessage(channel, text) {
-    const res = await fetch(
-        "https://slack.com/api/chat.postMessage",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ channel, text }),
-        }
-    );
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error);
+async function sendDM(userId, text) {
+    const { channel } = await slackPost("conversations.open", { users: userId });
+    await slackPost("chat.postMessage", { channel: channel.id, text });
 }
 
 /* =====================
-   4. Event handlers
+   4. GitHub API helper
+===================== */
+
+// 대기 중인 reviewer(requested_reviewers) + 이미 리뷰 제출한 reviewer 모두 반환
+async function fetchPRReviewers(prNumber) {
+    const repo = process.env.GITHUB_REPOSITORY;
+    const headers = {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        Accept: "application/vnd.github.v3+json",
+    };
+
+    const [prRes, reviewsRes] = await Promise.all([
+        fetch(`https://api.github.com/repos/${repo}/pulls/${prNumber}`, { headers }),
+        fetch(`https://api.github.com/repos/${repo}/pulls/${prNumber}/reviews`, { headers }),
+    ]);
+
+    const pr = await prRes.json();
+    const reviews = await reviewsRes.json();
+
+    const reviewers = new Set(
+        (pr.requested_reviewers || []).map((r) => r.login)
+    );
+    (Array.isArray(reviews) ? reviews : []).forEach((r) => {
+        if (r.user?.login) reviewers.add(r.user.login);
+    });
+
+    return [...reviewers];
+}
+
+/* =====================
+   5. Event handlers
    각 핸들러는 { title, body, url, recipients } 를 반환
 ===================== */
 
@@ -122,12 +143,14 @@ function handlePullRequestReview(e) {
 }
 
 // pull_request_review_comment: created
-function handlePullRequestReviewComment(e) {
+async function handlePullRequestReviewComment(e) {
     const pr = e.pull_request;
     const title = `PR #${pr.number} ${pr.title}의 새 코멘트`;
     const url = e.comment.html_url;
+    const reviewers = await fetchPRReviewers(pr.number);
     const recipients = [
         pr.user?.login,
+        ...reviewers,
         ...extractMentions(e.comment.body),
     ];
 
@@ -135,12 +158,14 @@ function handlePullRequestReviewComment(e) {
 }
 
 // issue_comment on PR: created
-function handleIssueCommentOnPR(e) {
+async function handleIssueCommentOnPR(e) {
     const is = e.issue;
     const title = `PR #${is.number}: ${is.title}의 새 코멘트`;
     const url = e.comment.html_url;
+    const reviewers = await fetchPRReviewers(is.number);
     const recipients = [
         is.user?.login,
+        ...reviewers,
         ...extractMentions(e.comment.body),
     ];
 
@@ -181,17 +206,17 @@ function handleIssues(e) {
 }
 
 /* =====================
-   5. Notification builder (이벤트 디스패처)
+   6. Notification builder (이벤트 디스패처)
 ===================== */
-function buildNotification(e) {
+async function buildNotification(e) {
     let result;
 
     if (e.review && e.pull_request) {
         result = handlePullRequestReview(e);
     } else if (e.comment && e.pull_request) {
-        result = handlePullRequestReviewComment(e);
+        result = await handlePullRequestReviewComment(e);
     } else if (e.comment && e.issue?.pull_request) {
-        result = handleIssueCommentOnPR(e);
+        result = await handleIssueCommentOnPR(e);
     } else if (e.comment && e.issue) {
         result = handleIssueComment(e);
     } else if (e.pull_request) {
@@ -220,10 +245,24 @@ function buildNotification(e) {
 }
 
 /* =====================
-   6. Main
+   7. Main
 ===================== */
+
+// 토큰/스코프/계정 문제 등 모든 요청에 영향을 주는 전역 오류 → 즉시 job 실패
+const FATAL_SLACK_ERRORS = new Set([
+    "invalid_auth",
+    "not_authed",
+    "account_inactive",
+    "token_revoked",
+    "token_expired",
+    "no_permission",
+    "missing_scope",
+]);
+
+const MAX_ATTEMPTS = 3;
+
 async function main() {
-    const { recipients, text } = buildNotification(event);
+    const { recipients, text } = await buildNotification(event);
 
     const slackUsers = uniq(
         recipients.map(ghToSlack).filter(Boolean)
@@ -234,12 +273,34 @@ async function main() {
         return;
     }
 
+    let successCount = 0;
     for (const uid of slackUsers) {
-        const channel = await openDM(uid);
-        await postMessage(channel, text);
+        let sent = false;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                await sendDM(uid, text);
+                sent = true;
+                break;
+            } catch (err) {
+                // 전역 오류: 재시도 없이 즉시 throw → job 실패
+                if (FATAL_SLACK_ERRORS.has(err.message)) throw err;
+
+                if (attempt === MAX_ATTEMPTS) {
+                    console.error(`Failed to DM ${uid} after ${MAX_ATTEMPTS} attempts: ${err.message}`);
+                    break;
+                }
+                const delay = err.retryAfterMs ?? 1000 * 2 ** (attempt - 1);
+                console.warn(`Retry ${attempt}/${MAX_ATTEMPTS} for ${uid} in ${delay}ms: ${err.message}`);
+                await new Promise((r) => setTimeout(r, delay));
+            }
+        }
+        if (sent) successCount++;
     }
 
-    console.log(`Sent Slack DM to ${slackUsers.length} user(s).`);
+    if (successCount === 0) {
+        throw new Error(`All ${slackUsers.length} DM(s) failed — check bot token and user mappings.`);
+    }
+    console.log(`Sent Slack DM to ${successCount}/${slackUsers.length} user(s).`);
 }
 
 main().catch((err) => {
