@@ -29,6 +29,12 @@ enum class RegistrationErrorCode(
         message = "모임의 관리자 혹은 신청자 본인만\n신청 상태를 변경할 수 있습니다.",
     ),
 
+    REGISTRATION_DELETE_UNAUTHORIZED(
+        httpStatusCode = HttpStatus.FORBIDDEN,
+        title = "신청 삭제 권한이 없습니다.",
+        message = "모임의 관리자 혹은 신청자 본인만\n신청을 삭제할 수 있습니다.",
+    ),
+
     REGISTRATION_VIEW_UNAUTHORIZED(
         httpStatusCode = HttpStatus.FORBIDDEN,
         title = "열람 권한이 없습니다.",
@@ -83,12 +89,6 @@ enum class RegistrationErrorCode(
         httpStatusCode = HttpStatus.CONFLICT,
         title = "이미 신청하셨습니다.",
         message = "동일한 모임에 중복으로\n신청할 수 없습니다.",
-    ),
-
-    REGISTRATION_ALREADY_CANCELED(
-        httpStatusCode = HttpStatus.CONFLICT,
-        title = "이미 취소된 신청입니다.",
-        message = "해당 신청은 이미 취소되었습니다.",
     ),
 
     REGISTRATION_ALREADY_BANNED(

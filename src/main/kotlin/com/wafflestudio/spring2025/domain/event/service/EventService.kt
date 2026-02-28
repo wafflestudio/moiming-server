@@ -134,7 +134,6 @@ class EventService(
                         RegistrationStatus.HOST -> ViewerStatus.HOST
                         RegistrationStatus.CONFIRMED -> ViewerStatus.CONFIRMED
                         RegistrationStatus.WAITLISTED -> ViewerStatus.WAITLISTED
-                        RegistrationStatus.CANCELED -> ViewerStatus.CANCELED
                         RegistrationStatus.BANNED -> ViewerStatus.BANNED
                     }
             }
@@ -459,7 +458,7 @@ class EventService(
                     cancel = true,
                 )
 
-            ViewerStatus.CANCELED, ViewerStatus.NONE ->
+            ViewerStatus.NONE ->
                 CapabilitiesInfo(
                     shareLink = false,
                     apply = canApply,

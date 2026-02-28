@@ -8,6 +8,7 @@ import com.wafflestudio.spring2025.domain.event.model.Event
 import com.wafflestudio.spring2025.domain.event.repository.EventLockRepository
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.dto.response.CreateRegistrationResponse
+import com.wafflestudio.spring2025.domain.registration.dto.response.DeleteRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.EventRegistrationItem
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetEventRegistrationsResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetMyRegistrationsResponse
@@ -23,7 +24,6 @@ import com.wafflestudio.spring2025.domain.registration.exception.RegistrationVal
 import com.wafflestudio.spring2025.domain.registration.model.Registration
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
-import com.wafflestudio.spring2025.domain.registration.service.command.CreateRegistrationCommand
 import com.wafflestudio.spring2025.domain.user.model.User
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.dao.DuplicateKeyException
@@ -52,24 +52,43 @@ RegistrationService(
     private val tokenValidity = Duration.ofHours(24)
 
     @Transactional
-    fun create(command: CreateRegistrationCommand): CreateRegistrationResponse =
-        when (command) {
-            is CreateRegistrationCommand.Member ->
-                createInternal(
-                    userId = command.userId,
-                    eventId = command.eventId,
-                    guestName = null,
-                    guestEmail = null,
-                )
+    fun create(
+        eventId: String,
+        userId: Long?,
+        guestName: String?,
+        guestEmail: String?,
+    ): CreateRegistrationResponse =
+        createInternal(
+            userId = userId,
+            eventId = eventId,
+            guestName = guestName,
+            guestEmail = guestEmail,
+        )
 
-            is CreateRegistrationCommand.Guest ->
-                createInternal(
-                    userId = null,
-                    eventId = command.eventId,
-                    guestName = command.name,
-                    guestEmail = command.email,
-                )
+    @Transactional
+    fun delete(
+        registrationPublicId: String,
+        userId: Long?,
+        guestName: String?,
+        guestEmail: String?,
+    ): DeleteRegistrationResponse {
+        if (userId == null) {
+            if (guestName.isNullOrBlank()) {
+                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_NAME)
+            }
+            if (guestEmail.isNullOrBlank()) {
+                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
+            }
         }
+
+        deleteInternal(
+            userId = userId,
+            guestName = guestName,
+            guestEmail = guestEmail,
+            registrationPublicId = registrationPublicId,
+        )
+        return DeleteRegistrationResponse()
+    }
 
     private fun createInternal(
         userId: Long?,
@@ -121,10 +140,6 @@ RegistrationService(
                     when (existingRegistration.status) {
                         RegistrationStatus.BANNED ->
                             throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_BLOCKED_BANNED)
-
-                        RegistrationStatus.CANCELED -> {
-                            TODO("CANCELED 필드는 삭제 예정이라 일단 이렇게 처리")
-                        }
 
                         RegistrationStatus.HOST -> {
                             existingRegistration // HOST로 되어있는 참여신청자가 없어 그냥 넘어가는 코드
@@ -222,12 +237,83 @@ RegistrationService(
         )
     }
 
+    private fun deleteInternal(
+        userId: Long?,
+        guestName: String?,
+        guestEmail: String?,
+        registrationPublicId: String,
+    ) {
+        val registration =
+            registrationRepository.findByRegistrationPublicId(registrationPublicId)
+                ?: throw RegistrationNotFoundException()
+
+        val event =
+            eventRepository.findById(registration.eventId).orElseThrow { EventNotFoundException() }
+
+        if (userId != null) {
+            if (registration.userId != userId) {
+                throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_DELETE_UNAUTHORIZED)
+            }
+        } else {
+            if (registration.userId != null ||
+                registration.guestName != guestName ||
+                registration.guestEmail != guestEmail
+            ) {
+                throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_DELETE_UNAUTHORIZED)
+            }
+        }
+
+        val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
+        registrationRepository.deleteById(requireNotNull(registration.id))
+
+        if (wasConfirmed) {
+            reconcileWaitlist(registration.eventId)
+        }
+
+        val registrationUser =
+            registration.userId?.let { id ->
+                userRepository.findById(id).orElse(null)
+            }
+
+        val recipientEmail = registrationUser?.email ?: registration.guestEmail
+
+        if (!recipientEmail.isNullOrBlank()) {
+            val confirmedCount =
+                registrationRepository
+                    .countByEventIdAndStatus(event.id!!, RegistrationStatus.CONFIRMED)
+                    .toInt()
+            val waitlistedCount =
+                registrationRepository
+                    .countByEventIdAndStatus(event.id!!, RegistrationStatus.WAITLISTED)
+                    .toInt()
+            val totalCount = confirmedCount + waitlistedCount
+
+            val emailData =
+                EmailService.RegistrationDeleteEmailData(
+                    toEmail = recipientEmail,
+                    name = registration.guestName ?: registrationUser?.name ?: "참여자",
+                    eventTitle = event.title,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    totalCount = totalCount,
+                    capacity = event.capacity,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
+                    description = event.description,
+                )
+
+            afterCommit {
+                emailService.sendRegistrationDeleteEmail(emailData)
+            }
+        }
+    }
+
     private fun toResponseStatus(status: RegistrationStatus): RegistrationStatusResponse =
         when (status) {
             RegistrationStatus.HOST -> RegistrationStatusResponse.CONFIRMED
             RegistrationStatus.CONFIRMED -> RegistrationStatusResponse.CONFIRMED
             RegistrationStatus.WAITLISTED -> RegistrationStatusResponse.WAITLISTED
-            RegistrationStatus.CANCELED -> RegistrationStatusResponse.CANCELED
             RegistrationStatus.BANNED -> RegistrationStatusResponse.BANNED
         }
 
@@ -309,9 +395,6 @@ RegistrationService(
         if (status == RegistrationStatus.BANNED && !isHost) {
             throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
         }
-        if (status == RegistrationStatus.CANCELED && !isHost && !isRegistrant && userId != null) {
-            throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
-        }
 
         val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
         when (status) {
@@ -320,22 +403,6 @@ RegistrationService(
                     throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_BANNED)
                 }
                 registration.status = RegistrationStatus.BANNED
-                val saved = registrationRepository.save(registration)
-
-                sendStatusEmailAfterUpdate(
-                    registration = saved,
-                    event = event,
-                )
-            }
-
-            RegistrationStatus.CANCELED -> {
-                if (registration.status == RegistrationStatus.BANNED) {
-                    throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_INVALID_STATUS)
-                }
-                if (registration.status == RegistrationStatus.CANCELED) {
-                    throw RegistrationConflictException(RegistrationErrorCode.REGISTRATION_ALREADY_CANCELED)
-                }
-                registration.status = RegistrationStatus.CANCELED
                 val saved = registrationRepository.save(registration)
 
                 sendStatusEmailAfterUpdate(
@@ -483,7 +550,6 @@ RegistrationService(
             "confirmed" -> RegistrationStatus.CONFIRMED
             // "waiting" 문자열은 혹시 남아있는 클라이언트 호환 위해 두고 싶으면 유지 가능
             "waiting", "waitlisted" -> RegistrationStatus.WAITLISTED
-            "canceled" -> RegistrationStatus.CANCELED
             "banned" -> RegistrationStatus.BANNED
             else -> throw RegistrationValidationException(RegistrationErrorCode.INVALID_REGISTRATION_QUERY_PARAMETER)
         }

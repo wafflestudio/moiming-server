@@ -1,7 +1,9 @@
 package com.wafflestudio.spring2025.domain.registration.controller
 
 import com.wafflestudio.spring2025.domain.auth.LoggedInUser
+import com.wafflestudio.spring2025.domain.registration.dto.request.DeleteRegistrationRequest
 import com.wafflestudio.spring2025.domain.registration.dto.request.UpdateRegistrationStatusRequest
+import com.wafflestudio.spring2025.domain.registration.dto.response.DeleteRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.GetRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.dto.response.PatchRegistrationResponse
 import com.wafflestudio.spring2025.domain.registration.exception.RegistrationErrorCode
@@ -11,6 +13,7 @@ import com.wafflestudio.spring2025.domain.user.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -53,6 +56,23 @@ class RegistrationController(
         @LoggedInUser user: User?,
     ): ResponseEntity<GetRegistrationResponse> {
         val response = registrationService.getRegistrationInformation(registrationId, user)
+        return ResponseEntity.ok(response)
+    }
+
+    @DeleteMapping
+    fun delete(
+        @PathVariable registrationId: String,
+        @RequestBody request: DeleteRegistrationRequest,
+        @LoggedInUser user: User?,
+    ): ResponseEntity<DeleteRegistrationResponse> {
+        val response =
+            registrationService.delete(
+                registrationPublicId = registrationId,
+                userId = user?.id,
+                guestName = request.guestName,
+                guestEmail = request.guestEmail,
+            )
+
         return ResponseEntity.ok(response)
     }
 }
