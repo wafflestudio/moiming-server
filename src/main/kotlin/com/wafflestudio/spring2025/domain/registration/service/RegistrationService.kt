@@ -57,44 +57,6 @@ RegistrationService(
         userId: Long?,
         guestName: String?,
         guestEmail: String?,
-    ): CreateRegistrationResponse =
-        createInternal(
-            userId = userId,
-            eventId = eventId,
-            guestName = guestName,
-            guestEmail = guestEmail,
-        )
-
-    @Transactional
-    fun delete(
-        registrationPublicId: String,
-        userId: Long?,
-        guestName: String?,
-        guestEmail: String?,
-    ): DeleteRegistrationResponse {
-        if (userId == null) {
-            if (guestName.isNullOrBlank()) {
-                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_NAME)
-            }
-            if (guestEmail.isNullOrBlank()) {
-                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
-            }
-        }
-
-        deleteInternal(
-            userId = userId,
-            guestName = guestName,
-            guestEmail = guestEmail,
-            registrationPublicId = registrationPublicId,
-        )
-        return DeleteRegistrationResponse()
-    }
-
-    private fun createInternal(
-        userId: Long?,
-        eventId: String,
-        guestName: String?,
-        guestEmail: String?,
     ): CreateRegistrationResponse {
         val event = eventRepository.findByPublicId(eventId) ?: throw EventNotFoundException()
         val eventPk = event.id ?: throw EventNotFoundException()
@@ -235,6 +197,31 @@ RegistrationService(
         return CreateRegistrationResponse(
             registrationPublicId = saved.registrationPublicId,
         )
+    }
+
+    @Transactional
+    fun delete(
+        registrationPublicId: String,
+        userId: Long?,
+        guestName: String?,
+        guestEmail: String?,
+    ): DeleteRegistrationResponse {
+        if (userId == null) {
+            if (guestName.isNullOrBlank()) {
+                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_NAME)
+            }
+            if (guestEmail.isNullOrBlank()) {
+                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
+            }
+        }
+
+        deleteInternal(
+            userId = userId,
+            guestName = guestName,
+            guestEmail = guestEmail,
+            registrationPublicId = registrationPublicId,
+        )
+        return DeleteRegistrationResponse()
     }
 
     private fun deleteInternal(
