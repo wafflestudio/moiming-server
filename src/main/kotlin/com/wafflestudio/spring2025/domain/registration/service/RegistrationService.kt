@@ -230,6 +230,8 @@ RegistrationService(
             afterCommit {
                 emailService.sendRegistrationStatusEmail(emailData)
             }
+        } else {
+            throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
         }
 
         return CreateRegistrationResponse(
