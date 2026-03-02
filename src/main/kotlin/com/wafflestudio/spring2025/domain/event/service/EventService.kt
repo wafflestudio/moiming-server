@@ -12,6 +12,7 @@ import com.wafflestudio.spring2025.domain.event.dto.response.ViewerInfo
 import com.wafflestudio.spring2025.domain.event.dto.response.ViewerStatus
 import com.wafflestudio.spring2025.domain.event.exception.EventErrorCode
 import com.wafflestudio.spring2025.domain.event.exception.EventForbiddenException
+import com.wafflestudio.spring2025.domain.event.exception.EventHasConfirmedRegistrationsException
 import com.wafflestudio.spring2025.domain.event.exception.EventNotFoundException
 import com.wafflestudio.spring2025.domain.event.exception.EventValidationException
 import com.wafflestudio.spring2025.domain.event.model.Event
@@ -343,7 +344,18 @@ class EventService(
     ) {
         val event = getEventByPublicId(publicId)
         requireCreator(event, requesterId)
-        eventRepository.deleteById(requireNotNull(event.id))
+        val confirmedNumber =
+            registrationRepository
+                .countByEventIdAndStatus(
+                    eventID = requireNotNull(event.id),
+                    registrationStatus = RegistrationStatus.CONFIRMED,
+                ).toInt()
+
+        if (confirmedNumber > 0) {
+            throw EventHasConfirmedRegistrationsException()
+        } else {
+            eventRepository.deleteById(requireNotNull(event.id))
+        }
     }
 
     private fun getEventByPublicId(publicId: String): Event =

@@ -19,6 +19,8 @@ class EventForbiddenException : EventException(error = EventErrorCode.NOT_EVENT_
 
 class EventFullException : EventException(error = EventErrorCode.EVENT_FULL)
 
+class EventHasConfirmedRegistrationsException : EventException(error = EventErrorCode.EVENT_HAS_CONFIRMED_REGISTRATIONS)
+
 class EventValidationException(
     error: EventErrorCode,
 ) : EventException(error = error)
