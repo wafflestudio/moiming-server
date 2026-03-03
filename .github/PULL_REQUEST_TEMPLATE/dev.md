@@ -1,8 +1,5 @@
 ## ✨ Feature PR (to dev)
 
-### 🔀 Base branch 확인
-- [ ] 이 PR의 base branch를 `dev`로 설정했습니다.
-
 ### 🧪 로컬 테스트 여부
 - [ ] 로컬에서 Swagger 혹은 테스트 코드로 동작을 확인했습니다.
 

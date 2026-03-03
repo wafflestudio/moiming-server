@@ -1,8 +1,5 @@
 ## 🚀 Production PR (to main)
 
-### 🔀 Base branch 확인
-- [ ] 이 PR의 base branch는 `main`입니다. `main`에는 `dev` 혹은 `hotfix` 브랜치만 머지할 수 있습니다.
-
 ### 🧪 테스트 여부
 - [ ] dev 서버 배포 성공
 - [ ] CI 성공
