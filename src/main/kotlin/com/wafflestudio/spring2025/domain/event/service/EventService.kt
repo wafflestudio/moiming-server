@@ -15,6 +15,7 @@ import com.wafflestudio.spring2025.domain.event.exception.EventForbiddenExceptio
 import com.wafflestudio.spring2025.domain.event.exception.EventNotFoundException
 import com.wafflestudio.spring2025.domain.event.exception.EventValidationException
 import com.wafflestudio.spring2025.domain.event.model.Event
+import com.wafflestudio.spring2025.domain.event.repository.EventLockRepository
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
@@ -22,12 +23,14 @@ import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.util.UUID
 
 @Service
 class EventService(
     private val eventRepository: EventRepository,
+    private val eventLockRepository: EventLockRepository,
     private val registrationRepository: RegistrationRepository,
     private val userRepository: UserRepository,
     private val imageService: ImageService,
@@ -296,6 +299,7 @@ class EventService(
         )
     }
 
+    @Transactional
     fun update(
         publicId: String,
         title: String?,
@@ -311,6 +315,17 @@ class EventService(
     ): Event {
         val event = getEventByPublicId(publicId)
         requireCreator(event, requesterId)
+        val eventId = requireNotNull(event.id) { "Event id is null: publicId=$publicId" }
+        eventLockRepository.lockById(eventId)
+
+        val activeParticipants = countActiveParticipants(eventId)
+        validateParticipantAwareUpdate(
+            event = event,
+            registrationStartsAt = registrationStartsAt,
+            registrationEndsAt = registrationEndsAt,
+            capacity = capacity,
+            activeParticipants = activeParticipants,
+        )
 
         title?.let {
             if (it.isBlank()) throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
@@ -416,6 +431,51 @@ class EventService(
             registrationEndsAt.isAfter(startsAt)
         ) {
             throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
+        }
+    }
+
+    private fun countActiveParticipants(eventId: Long): Int {
+        val confirmedCount =
+            registrationRepository
+                .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
+                .toInt()
+
+        val waitlistedCount =
+            registrationRepository
+                .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.WAITLISTED)
+                .toInt()
+
+        return confirmedCount + waitlistedCount
+    }
+
+    private fun validateParticipantAwareUpdate(
+        event: Event,
+        registrationStartsAt: Instant?,
+        registrationEndsAt: Instant?,
+        capacity: Int?,
+        activeParticipants: Int,
+    ) {
+        if (activeParticipants <= 0) return
+
+        if (registrationStartsAt != null &&
+            event.registrationStartsAt != null &&
+            registrationStartsAt.isAfter(event.registrationStartsAt)
+        ) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_START_CANNOT_DELAY_WITH_PARTICIPANTS)
+        }
+
+        if (registrationEndsAt != null &&
+            event.registrationEndsAt != null &&
+            registrationEndsAt.isBefore(event.registrationEndsAt)
+        ) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS)
+        }
+
+        if (capacity != null &&
+            event.capacity != null &&
+            capacity < event.capacity!!
+        ) {
+            throw EventValidationException(EventErrorCode.CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS)
         }
     }
 

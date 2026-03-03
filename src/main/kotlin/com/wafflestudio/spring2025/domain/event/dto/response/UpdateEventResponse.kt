@@ -13,8 +13,12 @@ data class UpdateEventResponse(
     val waitlistEnabled: Boolean,
     val registrationStartsAt: Instant?,
     val registrationEndsAt: Instant?,
+    val notice: String,
 ) {
     companion object {
+        const val PARTICIPANT_NOTICE: String =
+            "수정된 사항은 참여자들에게 자동 안내되지 않습니다. 필요 시 직접 안내해 주세요."
+
         fun from(event: Event): UpdateEventResponse =
             UpdateEventResponse(
                 title = event.title,
@@ -26,6 +30,7 @@ data class UpdateEventResponse(
                 waitlistEnabled = event.waitlistEnabled,
                 registrationStartsAt = event.registrationStartsAt,
                 registrationEndsAt = event.registrationEndsAt,
+                notice = PARTICIPANT_NOTICE,
             )
     }
 }
