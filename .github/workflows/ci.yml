@@ -2,10 +2,10 @@ name: ci.yml
 on:
   pull_request:
     branches:
-      - main
+      - main, dev
   push:
     branches:
-      - main
+      - main, dev
 
 jobs:
   build:
