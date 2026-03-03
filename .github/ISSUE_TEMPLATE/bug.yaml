@@ -7,12 +7,14 @@ body:
   - type: textarea
     id: reproduce
     attributes:
-      label: 재현 방법 (필수)
-      description: 버그를 재현할 수 있는 최소 단계를 작성해주세요.
+      label: 문제 상황 및 재현 방법 (필수)
+      description: 버그를 간략히 설명하고, 재현할 수 있는 최소 단계를 작성해주세요.
       placeholder: |
         (예시)
-        1. POST /events/{id}/registrations 호출
-        2. 정원이 가득 찬 이벤트에 신청
+        정원이 가득 찬 일정에 참여신청 시 500 에러 발생
+        
+        1. 정원이 가득 찬 일정 선택
+        2. POST /events/{해당 일정 id}/registrations 호출
         3. 500 에러 발생
     validations:
       required: true
