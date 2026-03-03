@@ -1,6 +1,6 @@
 name: 🧩 Work
 description: 기능 추가, 리팩터링, 인프라, 문서 등 작업 이슈
-title: ""
+title: "제목"
 labels: ["work"]
 
 body:

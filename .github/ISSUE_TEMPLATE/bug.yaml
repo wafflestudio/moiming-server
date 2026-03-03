@@ -1,6 +1,6 @@
 name: 🐛 Bug
 description: 버그 리포트
-title: ""
+title: "제목"
 labels: ["bug"]
 
 body:
