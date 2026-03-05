@@ -59,6 +59,6 @@ class UserController(
         @Parameter(hidden = true) @LoggedInUser user: User,
     ): ResponseEntity<Void> {
         userService.deleteMe(user = user)
-        return ResponseEntity.ok().build()
+        return ResponseEntity.noContent().build()
     }
 }
