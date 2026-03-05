@@ -43,7 +43,10 @@ class UserController(
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "사용자 정보 수정 성공"),
-            ApiResponse(responseCode = "400", description = "BAD_NAME - 이름 형식 오류 | BAD_PASSWORD - 비밀번호 형식 오류 | PROFILE_IMAGE_NOT_FOUND - 존재하지 않는 이미지"),
+            ApiResponse(
+                responseCode = "400",
+                description = "BAD_NAME - 이름 형식 오류 | BAD_PASSWORD - 비밀번호 형식 오류 | PROFILE_IMAGE_NOT_FOUND - 존재하지 않는 이미지",
+            ),
             ApiResponse(responseCode = "401", description = "AUTHENTICATION_REQUIRED - 로그인이 필요합니다"),
             ApiResponse(responseCode = "403", description = "EMAIL_CHANGE_FORBIDDEN - 이메일은 변경할 수 없습니다"),
         ],

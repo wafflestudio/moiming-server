@@ -59,15 +59,12 @@ class UserService(
         userRepository.save(user)
     }
 
-    fun deleteMe(
-        user: User,
-    ) {
+    fun deleteMe(user: User) {
         try {
             userRepository.delete(user)
         } catch (e: Exception) {
             throw UserException(UserErrorCode.NO_SUCH_USER)
         }
-
     }
 
     private fun validateName(name: String) {

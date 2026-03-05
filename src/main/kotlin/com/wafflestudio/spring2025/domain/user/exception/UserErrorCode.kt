@@ -21,6 +21,6 @@ enum class UserErrorCode(
     NO_SUCH_USER(
         httpStatusCode = HttpStatus.NOT_FOUND,
         title = "존재하지 않는 회원입니다.",
-        message = "이미 탈퇴 처리가 되었거나\n존재하지 않는 회원입니다."
-    )
+        message = "이미 탈퇴 처리가 되었거나\n존재하지 않는 회원입니다.",
+    ),
 }
