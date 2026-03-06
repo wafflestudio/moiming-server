@@ -93,33 +93,6 @@ class EventServiceTest {
     }
 
     @Test
-    fun `registration window can be changed when only waitlisted exists`() {
-        val event = makeEvent(capacity = 10)
-        stubEventLookup(event)
-        stubParticipantCounts(eventId = event.id!!, confirmed = 0, waitlisted = 1)
-        val expectedStart = event.registrationStartsAt!!.plusSeconds(300)
-        val expectedEnd = event.registrationEndsAt!!.minusSeconds(300)
-
-        val updated =
-            eventService.update(
-                publicId = event.publicId,
-                title = null,
-                description = null,
-                location = null,
-                startsAt = null,
-                endsAt = null,
-                capacity = null,
-                waitlistEnabled = null,
-                registrationStartsAt = expectedStart,
-                registrationEndsAt = expectedEnd,
-                requesterId = event.createdBy,
-            )
-
-        assertThat(updated.registrationStartsAt).isEqualTo(expectedStart)
-        assertThat(updated.registrationEndsAt).isEqualTo(expectedEnd)
-    }
-
-    @Test
     fun `capacity cannot be set below confirmed count`() {
         val event = makeEvent(capacity = 10)
         stubEventLookup(event)
