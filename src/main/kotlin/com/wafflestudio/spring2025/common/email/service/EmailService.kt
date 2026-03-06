@@ -138,7 +138,7 @@ class EmailService(
 
                 sendHtmlEmail(
                     to = data.toEmail,
-                    subject = "모이밍 참여 신청 확정",
+                    subject = emailName("참여 신청 확정", data.eventTitle),
                     htmlContent = htmlContent,
                 )
 
@@ -164,7 +164,7 @@ class EmailService(
 
                 sendHtmlEmail(
                     to = data.toEmail,
-                    subject = "모이밍 참여 신청 대기",
+                    subject = emailName("참여 신청 대기", data.eventTitle),
                     htmlContent = htmlContent,
                 )
 
@@ -186,7 +186,7 @@ class EmailService(
 
                 sendHtmlEmail(
                     to = data.toEmail,
-                    subject = "모이밍 참여 신청 강제 취소",
+                    subject = emailName("참여 신청 강제 취소", data.eventTitle),
                     htmlContent = htmlContent,
                 )
 
@@ -214,7 +214,7 @@ class EmailService(
 
         sendHtmlEmail(
             to = data.toEmail,
-            subject = "모이밍 참여 신청 취소",
+            subject = emailName("참여 신청 취소", data.eventTitle),
             htmlContent = htmlContent,
         )
 
@@ -255,7 +255,7 @@ class EmailService(
 
         sendHtmlEmail(
             to = toEmail,
-            subject = "모이밍 참여 신청 대기 후, 확정",
+            subject = emailName("참여 신청 대기 후 확정", eventTitle),
             htmlContent = htmlContent,
         )
 
@@ -273,6 +273,14 @@ class EmailService(
         } else {
             location
         }
+
+    private fun emailName(
+        title: String,
+        eventTitle: String?,
+    ): String {
+        val safeEventTitle = if (eventTitle.isNullOrBlank()) "제목 미정 모임" else eventTitle
+        return "[모이밍] $title: $safeEventTitle"
+    }
 
     private fun formatEventDateRange(
         start: Instant?,
