@@ -31,14 +31,14 @@ body:
   - type: textarea
     id: goal
     attributes:
-      label: 목표 / 기대 결과 (선택)
+      label: 목표 / 기대 결과 (필수)
       description: 이 작업이 완료되면 무엇이 달라지나요?
       placeholder: |
         (예시)
         - 로그인된 사용자가 탈퇴 요청 시 계정이 삭제됩니다.
         - 탈퇴 후 동일 이메일로 재가입이 가능합니다.
     validations:
-      required: false
+      required: true
 
   - type: checkboxes
     id: impact
