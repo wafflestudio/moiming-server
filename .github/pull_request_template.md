@@ -1,33 +1,5 @@
-## ✨ Feature PR (to dev)
+## PR 템플릿 선택
+>preview 클릭 후 원하는 템플릿으로 이동하세요.
 
-### 🧪 로컬 테스트 여부 (작업자 체크)
-- [ ] 로컬에서 Swagger 혹은 테스트 코드로 동작을 확인했습니다.
-
-### 📄 documentation 최신화 여부
-> 변경사항과 관련된 API의 swagger documentation이 실제 동작과 일치하는지 확인합니다.
-- [ ] (작업자) 확인하였습니다.
-- [ ] (리뷰어) 확인하였습니다.
-
-### 📌 작업 내용(what & why)
-
--
-
-### 🔎 영향 범위
-  <!-- 해당하는 항목만 남기고 나머지는 삭제해주세요 -->                                                                                                                                                                                    
-- DB 스키마 변경
-- API 스펙 변경
-- 환경 변수 추가/변경
-- 동시성 / 트랜잭션 처리 영향
-
-### 📡 API 변경사항 (있다면)
-
-| Method    | URL | 변경 내용 |
-|-----------|-----|----------|
-| (예시) POST | /events | capacity 필드 추가 |
-
-### 👀 집중 리뷰 요청사항 (있다면)
-
--
-
-### 🔥 관련 이슈
-- closes #
+- ✨ [dev PR 템플릿](?expand=1&template=feature_template.md)
+- 🚀 [main PR 템플릿](?expand=1&template=feature_template.md)
