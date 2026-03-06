@@ -104,7 +104,7 @@ enum class EventErrorCode(
     CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "Capacity cannot be decreased.",
-        message = "When participants exist, capacity cannot be reduced below the current value.",
+        message = "Capacity cannot be reduced below the current confirmed participant count.",
     ),
 
     // 23xx - Conflict

@@ -47,7 +47,7 @@ RegistrationService(
     private val userRepository: UserRepository,
     private val emailService: EmailService,
     private val imageService: ImageService,
-) {
+) : WaitlistReconciliationService {
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
     private val tokenValidity = Duration.ofHours(24)
 
@@ -669,7 +669,7 @@ RegistrationService(
     }
 
     @Transactional
-    fun reconcileWaitlist(eventId: Long) {
+    override fun reconcileWaitlist(eventId: Long) {
         eventLockRepository.lockById(eventId)
 
         val event: Event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }

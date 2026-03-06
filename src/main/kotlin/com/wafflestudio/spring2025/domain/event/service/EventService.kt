@@ -19,6 +19,7 @@ import com.wafflestudio.spring2025.domain.event.repository.EventLockRepository
 import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
+import com.wafflestudio.spring2025.domain.registration.service.WaitlistReconciliationService
 import com.wafflestudio.spring2025.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -32,6 +33,7 @@ class EventService(
     private val eventRepository: EventRepository,
     private val eventLockRepository: EventLockRepository,
     private val registrationRepository: RegistrationRepository,
+    private val waitlistReconciliationService: WaitlistReconciliationService,
     private val userRepository: UserRepository,
     private val imageService: ImageService,
 ) {
@@ -317,14 +319,15 @@ class EventService(
         requireCreator(event, requesterId)
         val eventId = requireNotNull(event.id) { "Event id is null: publicId=$publicId" }
         eventLockRepository.lockById(eventId)
+        val previousCapacity = event.capacity
 
-        val activeParticipants = countActiveParticipants(eventId)
+        val confirmedParticipants = countConfirmedParticipants(eventId)
         validateParticipantAwareUpdate(
             event = event,
             registrationStartsAt = registrationStartsAt,
             registrationEndsAt = registrationEndsAt,
             capacity = capacity,
-            activeParticipants = activeParticipants,
+            confirmedParticipants = confirmedParticipants,
         )
 
         title?.let {
@@ -349,7 +352,11 @@ class EventService(
             registrationEndsAt = event.registrationEndsAt,
         )
 
-        return eventRepository.save(event)
+        val savedEvent = eventRepository.save(event)
+        if (isCapacityIncreased(previousCapacity, savedEvent.capacity)) {
+            waitlistReconciliationService.reconcileWaitlist(eventId)
+        }
+        return savedEvent
     }
 
     fun delete(
@@ -434,28 +441,19 @@ class EventService(
         }
     }
 
-    private fun countActiveParticipants(eventId: Long): Int {
-        val confirmedCount =
-            registrationRepository
-                .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
-                .toInt()
-
-        val waitlistedCount =
-            registrationRepository
-                .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.WAITLISTED)
-                .toInt()
-
-        return confirmedCount + waitlistedCount
-    }
+    private fun countConfirmedParticipants(eventId: Long): Int =
+        registrationRepository
+            .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
+            .toInt()
 
     private fun validateParticipantAwareUpdate(
         event: Event,
         registrationStartsAt: Instant?,
         registrationEndsAt: Instant?,
         capacity: Int?,
-        activeParticipants: Int,
+        confirmedParticipants: Int,
     ) {
-        if (activeParticipants <= 0) return
+        if (confirmedParticipants <= 0) return
 
         if (registrationStartsAt != null &&
             event.registrationStartsAt != null &&
@@ -471,13 +469,15 @@ class EventService(
             throw EventValidationException(EventErrorCode.REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS)
         }
 
-        if (capacity != null &&
-            event.capacity != null &&
-            capacity < event.capacity!!
-        ) {
+        if (capacity != null && capacity < confirmedParticipants) {
             throw EventValidationException(EventErrorCode.CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS)
         }
     }
+
+    private fun isCapacityIncreased(
+        previousCapacity: Int?,
+        newCapacity: Int?,
+    ): Boolean = previousCapacity != null && newCapacity != null && newCapacity > previousCapacity
 
     private fun buildCapabilities(
         viewerStatus: ViewerStatus,
