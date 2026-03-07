@@ -91,6 +91,22 @@ enum class EventErrorCode(
         message = "신청 마감 시간이 모임 시작 시간보다\n빨라야 합니다.",
     ),
 
+    REGISTRATION_START_CANNOT_DELAY_WITH_PARTICIPANTS(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "Registration start cannot be delayed.",
+        message = "When participants exist, registration start cannot be moved later than the current value.",
+    ),
+    REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "Registration end cannot be advanced.",
+        message = "When participants exist, registration end cannot be moved earlier than the current value.",
+    ),
+    CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "Capacity cannot be decreased.",
+        message = "Capacity cannot be reduced below the current confirmed participant count.",
+    ),
+
     // 23xx - Conflict
     EVENT_FULL(
         httpStatusCode = HttpStatus.CONFLICT,

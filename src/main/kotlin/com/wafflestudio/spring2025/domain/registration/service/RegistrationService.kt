@@ -47,7 +47,7 @@ RegistrationService(
     private val userRepository: UserRepository,
     private val emailService: EmailService,
     private val imageService: ImageService,
-) {
+) : WaitlistReconciliationService {
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
     private val tokenValidity = Duration.ofHours(24)
 
@@ -55,44 +55,6 @@ RegistrationService(
     fun create(
         eventId: String,
         userId: Long?,
-        guestName: String?,
-        guestEmail: String?,
-    ): CreateRegistrationResponse =
-        createInternal(
-            userId = userId,
-            eventId = eventId,
-            guestName = guestName,
-            guestEmail = guestEmail,
-        )
-
-    @Transactional
-    fun delete(
-        registrationPublicId: String,
-        userId: Long?,
-        guestName: String?,
-        guestEmail: String?,
-    ): DeleteRegistrationResponse {
-        if (userId == null) {
-            if (guestName.isNullOrBlank()) {
-                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_NAME)
-            }
-            if (guestEmail.isNullOrBlank()) {
-                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
-            }
-        }
-
-        deleteInternal(
-            userId = userId,
-            guestName = guestName,
-            guestEmail = guestEmail,
-            registrationPublicId = registrationPublicId,
-        )
-        return DeleteRegistrationResponse()
-    }
-
-    private fun createInternal(
-        userId: Long?,
-        eventId: String,
         guestName: String?,
         guestEmail: String?,
     ): CreateRegistrationResponse {
@@ -237,6 +199,31 @@ RegistrationService(
         return CreateRegistrationResponse(
             registrationPublicId = saved.registrationPublicId,
         )
+    }
+
+    @Transactional
+    fun delete(
+        registrationPublicId: String,
+        userId: Long?,
+        guestName: String?,
+        guestEmail: String?,
+    ): DeleteRegistrationResponse {
+        if (userId == null) {
+            if (guestName.isNullOrBlank()) {
+                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_NAME)
+            }
+            if (guestEmail.isNullOrBlank()) {
+                throw RegistrationValidationException(RegistrationErrorCode.REGISTRATION_WRONG_EMAIL)
+            }
+        }
+
+        deleteInternal(
+            userId = userId,
+            guestName = guestName,
+            guestEmail = guestEmail,
+            registrationPublicId = registrationPublicId,
+        )
+        return DeleteRegistrationResponse()
     }
 
     private fun deleteInternal(
@@ -682,7 +669,7 @@ RegistrationService(
     }
 
     @Transactional
-    fun reconcileWaitlist(eventId: Long) {
+    override fun reconcileWaitlist(eventId: Long) {
         eventLockRepository.lockById(eventId)
 
         val event: Event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
