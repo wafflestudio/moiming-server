@@ -1,6 +1,7 @@
 package com.wafflestudio.spring2025
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.wafflestudio.spring2025.common.email.service.EmailService
 import com.wafflestudio.spring2025.domain.event.dto.request.CreateEventRequest
 import com.wafflestudio.spring2025.domain.event.dto.request.UpdateEventRequest
 import com.wafflestudio.spring2025.domain.event.model.Event
@@ -8,12 +9,14 @@ import com.wafflestudio.spring2025.domain.event.repository.EventRepository
 import com.wafflestudio.spring2025.domain.registration.model.Registration
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -38,6 +41,9 @@ class EventIntegrationTest
         private val eventRepository: EventRepository,
         private val registrationRepository: RegistrationRepository,
     ) {
+        @MockitoBean
+        private lateinit var emailService: EmailService
+
         // =================================================================
         // Helpers
         // =================================================================
@@ -638,12 +644,14 @@ class EventIntegrationTest
         @Test
         fun `cursor 기반 페이징으로 다음 페이지를 조회할 수 있다`() {
             val (user, token) = dataGenerator.generateUser()
-            repeat(3) { i ->
-                createEventInDb(createdBy = user.id!!, title = "이벤트 $i")
-                Thread.sleep(10) // createdAt 순서 보장
-            }
+            // events[0]=이벤트 0(oldest), events[1]=이벤트 1, events[2]=이벤트 2(newest)
+            val events =
+                (0 until 3).map { i ->
+                    createEventInDb(createdBy = user.id!!, title = "이벤트 $i")
+                        .also { Thread.sleep(10) } // createdAt 순서 보장
+                }
 
-            // 첫 페이지 (size=2) → 최신 2개
+            // 첫 페이지 (size=2) → 최신 2개: 이벤트 2, 이벤트 1
             val firstResult =
                 mvc
                     .perform(
@@ -655,18 +663,49 @@ class EventIntegrationTest
                     .andExpect(jsonPath("$.hasNext").value(true))
                     .andReturn()
 
-            val nextCursor = mapper.readTree(firstResult.response.contentAsString).get("nextCursor").asText()
+            val firstTree = mapper.readTree(firstResult.response.contentAsString)
+            val nextCursor = firstTree.get("nextCursor").asText()
+            val firstPageIds =
+                (0 until 2).map {
+                    firstTree
+                        .get("events")
+                        .get(it)
+                        .get("publicId")
+                        .asText()
+                }
 
-            // 두 번째 페이지 (cursor 사용) → 나머지 1개
-            mvc
-                .perform(
-                    get("/api/events/me")
-                        .header("Authorization", "Bearer $token")
-                        .param("size", "2")
-                        .param("cursor", nextCursor),
-                ).andExpect(status().isOk)
-                .andExpect(jsonPath("$.events.length()").value(1))
-                .andExpect(jsonPath("$.hasNext").value(false))
+            // 1페이지는 최신순 (이벤트 2 → 이벤트 1)
+            assertThat(firstPageIds[0]).isEqualTo(events[2].publicId)
+            assertThat(firstPageIds[1]).isEqualTo(events[1].publicId)
+
+            // 두 번째 페이지 (cursor 사용) → 나머지 1개: 이벤트 0
+            val secondResult =
+                mvc
+                    .perform(
+                        get("/api/events/me")
+                            .header("Authorization", "Bearer $token")
+                            .param("size", "2")
+                            .param("cursor", nextCursor),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.events.length()").value(1))
+                    .andExpect(jsonPath("$.hasNext").value(false))
+                    .andReturn()
+
+            val secondTree = mapper.readTree(secondResult.response.contentAsString)
+            val secondPageIds =
+                listOf(
+                    secondTree
+                        .get("events")
+                        .get(0)
+                        .get("publicId")
+                        .asText(),
+                )
+
+            // 2페이지는 가장 오래된 이벤트 0
+            assertThat(secondPageIds[0]).isEqualTo(events[0].publicId)
+
+            // 1페이지와 2페이지 간 publicId 중복 없음
+            assertThat(firstPageIds).doesNotContainAnyElementsOf(secondPageIds)
         }
 
         // =================================================================
