@@ -379,7 +379,7 @@ RegistrationService(
         }
 
         val isHost = userId != null && userId == event.createdBy
-        val isRegistrant = userId != null && registration.userId == userId
+//        val isRegistrant = userId != null && registration.userId == userId
 
         if (status == RegistrationStatus.BANNED && !isHost) {
             throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_PATCH_UNAUTHORIZED)
