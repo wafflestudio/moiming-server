@@ -1,0 +1,55 @@
+name: 🐛 Bug
+description: 버그 리포트
+title: "제목"
+labels: ["bug"]
+
+body:
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 문제 상황 및 재현 방법 (필수)
+      description: 버그를 간략히 설명하고, 재현할 수 있는 최소 단계를 작성해주세요.
+      placeholder: |
+        (예시)
+        정원이 가득 찬 일정에 참여신청 시 500 에러 발생
+        
+        1. 정원이 가득 찬 일정 선택
+        2. POST /events/{해당 일정 id}/registrations 호출
+        3. 500 에러 발생
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작 (필수)
+      description: 정상이라면 어떤 상태/응답이 나와야 하나요?
+      placeholder: |
+        (예시)
+        - 정원 초과 시 WAITLIST로 처리
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 스크린샷 / 로그 (선택)
+      description: 가능하면 첨부해주세요. 이미지/파일은 이 입력칸에 드래그&드롭하면 업로드됩니다.
+      placeholder: |
+        (예시)
+        - Swagger 응답 캡처 첨부
+        - 서버 로그 일부 붙여넣기
+    validations:
+      required: false
+
+  - type: textarea
+    id: suspected_cause
+    attributes:
+      label: 예상 원인 (선택)
+      description: 원인을 추측할 수 있다면 간단히 작성해주세요. (모르겠다면 비워도 됩니다)
+      placeholder: |
+        (예시)
+        - null 검증이 누락된 것으로 보입니다.
+        - 예외가 GlobalExceptionHandler에서 처리되지 않는 것 같습니다.
+    validations:
+      required: false
