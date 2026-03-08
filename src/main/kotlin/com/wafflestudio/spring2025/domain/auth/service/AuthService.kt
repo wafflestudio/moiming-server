@@ -25,7 +25,7 @@ class AuthService(
         password: String,
     ): String {
         val user: User = userRepository.findByEmail(email) ?: throw LoginFailedException()
-        if (BCrypt.checkpw(password, user.passwordHash).not()) {
+        if (user.passwordHash == null || !BCrypt.checkpw(password, user.passwordHash)) {
             throw LoginFailedException()
         }
         val accessToken = jwtTokenProvider.createToken(user.id!!)
