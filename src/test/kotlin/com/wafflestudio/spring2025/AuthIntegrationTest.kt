@@ -15,9 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -58,22 +58,24 @@ class AuthIntegrationTest
                     password = "password123",
                 )
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
         }
 
         @Test
         fun `이메일이 빈 문자열이면 회원가입 요청 시 400을 반환한다`() {
             val request = SignupRequest(email = "", name = "테스트유저", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("BAD_EMAIL"))
         }
 
@@ -81,11 +83,12 @@ class AuthIntegrationTest
         fun `이메일 형식이 올바르지 않으면 회원가입 요청 시 400을 반환한다`() {
             val request = SignupRequest(email = "not-an-email", name = "테스트유저", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("BAD_EMAIL"))
         }
 
@@ -93,11 +96,12 @@ class AuthIntegrationTest
         fun `이름이 공백이면 회원가입 요청 시 400을 반환한다`() {
             val request = SignupRequest(email = "user@example.com", name = "   ", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("BAD_NAME"))
         }
 
@@ -105,11 +109,12 @@ class AuthIntegrationTest
         fun `비밀번호가 8자 미만이면 회원가입 요청 시 400을 반환한다`() {
             val request = SignupRequest(email = "user@example.com", name = "테스트유저", password = "pass1")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("BAD_PASSWORD"))
         }
 
@@ -117,11 +122,12 @@ class AuthIntegrationTest
         fun `비밀번호에 숫자가 없으면 회원가입 요청 시 400을 반환한다`() {
             val request = SignupRequest(email = "user@example.com", name = "테스트유저", password = "onlyletters")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("BAD_PASSWORD"))
         }
 
@@ -129,11 +135,12 @@ class AuthIntegrationTest
         fun `비밀번호에 문자가 없으면 회원가입 요청 시 400을 반환한다`() {
             val request = SignupRequest(email = "user@example.com", name = "테스트유저", password = "12345678")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("BAD_PASSWORD"))
         }
 
@@ -152,11 +159,12 @@ class AuthIntegrationTest
 
             val request = SignupRequest(email = email, name = "테스트유저", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isConflict)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isConflict)
                 .andExpect(jsonPath("$.code").value("EMAIL_VERIFICATION_PENDING"))
         }
 
@@ -165,11 +173,12 @@ class AuthIntegrationTest
             val (user, _) = dataGenerator.generateUser()
             val request = SignupRequest(email = user.email, name = "테스트유저", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isConflict)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isConflict)
                 .andExpect(jsonPath("$.code").value("EMAIL_ACCOUNT_ALREADY_EXIST"))
         }
 
@@ -186,11 +195,12 @@ class AuthIntegrationTest
 
             val request = SignupRequest(email = user.email, name = "테스트유저", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isConflict)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isConflict)
                 .andExpect(jsonPath("$.code").value("GOOGLE_ACCOUNT_ALREADY_EXIST"))
         }
 
@@ -211,18 +221,20 @@ class AuthIntegrationTest
                 ),
             )
 
-            mvc.perform(
-                post("/api/auth/email-verification/$verificationCode"),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$verificationCode"),
+                ).andExpect(status().isOk)
         }
 
         @Test
         fun `존재하지 않는 인증 코드로 이메일 인증 시 400을 반환한다`() {
             val invalidCode = UUID.randomUUID().toString()
 
-            mvc.perform(
-                post("/api/auth/email-verification/$invalidCode"),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$invalidCode"),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("INVALID_VERIFICATION_CODE"))
         }
 
@@ -239,9 +251,10 @@ class AuthIntegrationTest
                 ),
             )
 
-            mvc.perform(
-                post("/api/auth/email-verification/$expiredCode"),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$expiredCode"),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("INVALID_VERIFICATION_CODE"))
         }
 
@@ -255,11 +268,12 @@ class AuthIntegrationTest
             val (user, _) = dataGenerator.generateUserWithPassword(password)
             val request = LoginRequest(email = user.email, password = password)
 
-            mvc.perform(
-                post("/api/auth/login")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/api/auth/login")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.token").isNotEmpty)
         }
 
@@ -267,11 +281,12 @@ class AuthIntegrationTest
         fun `존재하지 않는 이메일로 로그인 시 401을 반환한다`() {
             val request = LoginRequest(email = "nonexistent@example.com", password = "password123")
 
-            mvc.perform(
-                post("/api/auth/login")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/api/auth/login")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(jsonPath("$.code").value("LOGIN_FAILED"))
         }
 
@@ -280,11 +295,12 @@ class AuthIntegrationTest
             val (user, _) = dataGenerator.generateUserWithPassword("correctPassword1")
             val request = LoginRequest(email = user.email, password = "wrongPassword9")
 
-            mvc.perform(
-                post("/api/auth/login")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/api/auth/login")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(jsonPath("$.code").value("LOGIN_FAILED"))
         }
 
@@ -294,11 +310,12 @@ class AuthIntegrationTest
             val (user, _) = dataGenerator.generateUser()
             val request = LoginRequest(email = user.email, password = "anyPassword1")
 
-            mvc.perform(
-                post("/api/auth/login")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/api/auth/login")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(jsonPath("$.code").value("LOGIN_FAILED"))
         }
 
@@ -310,20 +327,22 @@ class AuthIntegrationTest
         fun `유효한 토큰으로 로그아웃 성공 시 204를 반환한다`() {
             val (_, token) = dataGenerator.generateUser()
 
-            mvc.perform(
-                post("/api/auth/logout")
-                    .header("Authorization", "Bearer $token")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/logout")
+                        .header("Authorization", "Bearer $token")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
         }
 
         @Test
         fun `Authorization 헤더 없이 로그아웃 요청 시 204를 반환한다`() {
             // /api/auth/logout은 @AuthRequired가 없으므로 인증 없이도 204 반환
-            mvc.perform(
-                post("/api/auth/logout")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
         }
 
         // =================================================================
@@ -334,11 +353,12 @@ class AuthIntegrationTest
         fun `유효한 토큰으로 내 정보 조회 시 200과 사용자 정보를 반환한다`() {
             val (user, token) = dataGenerator.generateUser()
 
-            mvc.perform(
-                get("/api/users/me")
-                    .header("Authorization", "Bearer $token")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/api/users/me")
+                        .header("Authorization", "Bearer $token")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(user.id))
                 .andExpect(jsonPath("$.email").value(user.email))
                 .andExpect(jsonPath("$.name").value(user.name))
@@ -347,20 +367,22 @@ class AuthIntegrationTest
 
         @Test
         fun `Authorization 헤더 없이 내 정보 조회 시 401을 반환한다`() {
-            mvc.perform(
-                get("/api/users/me")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    get("/api/users/me")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
         }
 
         @Test
         fun `유효하지 않은 토큰으로 내 정보 조회 시 401을 반환한다`() {
-            mvc.perform(
-                get("/api/users/me")
-                    .header("Authorization", "Bearer invalid.token.value")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    get("/api/users/me")
+                        .header("Authorization", "Bearer invalid.token.value")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
         }
 
@@ -369,18 +391,20 @@ class AuthIntegrationTest
             val (_, token) = dataGenerator.generateUser()
 
             // 로그아웃으로 토큰 블랙리스트 등록
-            mvc.perform(
-                post("/api/auth/logout")
-                    .header("Authorization", "Bearer $token")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/logout")
+                        .header("Authorization", "Bearer $token")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
 
             // 블랙리스트된 토큰으로 내 정보 조회 시 401
-            mvc.perform(
-                get("/api/users/me")
-                    .header("Authorization", "Bearer $token")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    get("/api/users/me")
+                        .header("Authorization", "Bearer $token")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
         }
 
@@ -395,27 +419,30 @@ class AuthIntegrationTest
             val password = "password123"
 
             // 1. 회원가입 요청 → 204 No Content (인증 이메일 발송)
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(SignupRequest(email = email, name = name, password = password)))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(SignupRequest(email = email, name = name, password = password)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
 
             // 2. DB에서 PendingUser의 인증 코드 획득
             val verificationCode = pendingUserRepository.findByEmail(email)!!.verificationCode
 
             // 3. 이메일 인증 완료 → 200 OK (User 생성)
-            mvc.perform(
-                post("/api/auth/email-verification/$verificationCode"),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$verificationCode"),
+                ).andExpect(status().isOk)
 
             // 4. 로그인 → 200 OK + JWT 토큰
             val loginResult =
-                mvc.perform(
-                    post("/api/auth/login")
-                        .content(mapper.writeValueAsString(LoginRequest(email = email, password = password)))
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isOk)
+                mvc
+                    .perform(
+                        post("/api/auth/login")
+                            .content(mapper.writeValueAsString(LoginRequest(email = email, password = password)))
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(status().isOk)
                     .andExpect(jsonPath("$.token").isNotEmpty)
                     .andReturn()
 
@@ -426,11 +453,12 @@ class AuthIntegrationTest
                     .asText()
 
             // 5. 내 정보 조회 → 200 OK + 사용자 정보
-            mvc.perform(
-                get("/api/users/me")
-                    .header("Authorization", "Bearer $token")
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/api/users/me")
+                        .header("Authorization", "Bearer $token")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.email").value(email))
                 .andExpect(jsonPath("$.name").value(name))
         }
@@ -449,14 +477,16 @@ class AuthIntegrationTest
             )
 
             // 첫 번째 인증 → 성공
-            mvc.perform(
-                post("/api/auth/email-verification/$verificationCode"),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$verificationCode"),
+                ).andExpect(status().isOk)
 
             // 두 번째 인증 (PendingUser 삭제됨) → 실패
-            mvc.perform(
-                post("/api/auth/email-verification/$verificationCode"),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$verificationCode"),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("INVALID_VERIFICATION_CODE"))
         }
 
@@ -484,11 +514,12 @@ class AuthIntegrationTest
 
             // 동일 이메일로 재가입 요청 → 만료된 PendingUser 삭제 후 새로 생성 → 204
             val request = SignupRequest(email = email, name = "신사용자", password = "newPassword1")
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(request))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
 
             // 새로운 PendingUser가 생성됐는지 확인 (코드가 교체됨)
             val newPendingUser = pendingUserRepository.findByEmail(email)!!
@@ -514,30 +545,34 @@ class AuthIntegrationTest
             )
 
             // 2. 만료된 코드로 인증 시도 → 400
-            mvc.perform(
-                post("/api/auth/email-verification/$expiredCode"),
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$expiredCode"),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("INVALID_VERIFICATION_CODE"))
 
             // 3. 동일 이메일로 재가입 요청 → 204 (만료된 PendingUser 삭제 후 신규 생성)
-            mvc.perform(
-                post("/api/auth/signup")
-                    .content(mapper.writeValueAsString(SignupRequest(email = email, name = "재인증유저", password = password)))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/api/auth/signup")
+                        .content(mapper.writeValueAsString(SignupRequest(email = email, name = "재인증유저", password = password)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isNoContent)
 
             // 4. 새로운 인증 코드로 이메일 인증 → 200
             val newCode = pendingUserRepository.findByEmail(email)!!.verificationCode
-            mvc.perform(
-                post("/api/auth/email-verification/$newCode"),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/api/auth/email-verification/$newCode"),
+                ).andExpect(status().isOk)
 
             // 5. 새로 가입된 계정으로 로그인 → 200
-            mvc.perform(
-                post("/api/auth/login")
-                    .content(mapper.writeValueAsString(LoginRequest(email = email, password = password)))
-                    .contentType(MediaType.APPLICATION_JSON),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/api/auth/login")
+                        .content(mapper.writeValueAsString(LoginRequest(email = email, password = password)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.token").isNotEmpty)
         }
     }
