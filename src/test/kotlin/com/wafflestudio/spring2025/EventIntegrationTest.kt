@@ -373,6 +373,8 @@ class EventIntegrationTest
                 .andExpect(jsonPath("$.capabilities.wait").value(false))
                 .andExpect(jsonPath("$.capabilities.cancel").value(false))
                 .andExpect(jsonPath("$.guestsPreview").isArray)
+                .andExpect(jsonPath("$.viewer.registrationPublicId").value(null as Any?))
+                .andExpect(jsonPath("$.viewer.reservationEmail").value(null as Any?))
         }
 
         @Test
@@ -497,6 +499,8 @@ class EventIntegrationTest
                         .header("Authorization", "Bearer $participantToken"),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.viewer.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.viewer.registrationPublicId").isNotEmpty)
+                .andExpect(jsonPath("$.viewer.reservationEmail").value(null as Any?))
                 .andExpect(jsonPath("$.capabilities.cancel").value(true))
                 .andExpect(jsonPath("$.capabilities.apply").value(false))
         }
@@ -531,6 +535,8 @@ class EventIntegrationTest
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.viewer.status").value("WAITLISTED"))
                 .andExpect(jsonPath("$.viewer.waitlistPosition").value(1))
+                .andExpect(jsonPath("$.viewer.registrationPublicId").isNotEmpty)
+                .andExpect(jsonPath("$.viewer.reservationEmail").value(null as Any?))
                 .andExpect(jsonPath("$.capabilities.cancel").value(true))
         }
 
@@ -788,6 +794,29 @@ class EventIntegrationTest
         }
 
         @Test
+        fun `모임 시작 시간을 앞당겨 기존 신청 마감 시간과 역전되면 400을 반환한다`() {
+            val (user, token) = dataGenerator.generateUser()
+            // startsAt=+7200, registrationEndsAt=+5400 → 유효한 초기 상태
+            val event =
+                createEventInDb(
+                    createdBy = user.id!!,
+                    startsAt = Instant.now().plusSeconds(7200),
+                    endsAt = Instant.now().plusSeconds(10800),
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
+                )
+
+            // startsAt=+3600 으로 앞당기면 registrationEndsAt(+5400) > startsAt(+3600) 이 됨
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(startsAt = Instant.now().plusSeconds(3600))))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("REGISTRATION_ENDS_AFTER_EVENT_START"))
+        }
+
+        @Test
         fun `수정 시 null 필드는 기존 값을 유지한다`() {
             val (user, token) = dataGenerator.generateUser()
             val event = createEventInDb(createdBy = user.id!!, title = "원래 제목")
@@ -802,6 +831,161 @@ class EventIntegrationTest
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.title").value("바뀐 제목"))
                 .andExpect(jsonPath("$.waitlistEnabled").value(false)) // 기존 값 유지
+        }
+
+        @Test
+        fun `확정 참가자 있을 때 신청 시작 시간을 늦추면 400을 반환한다`() {
+            val (host, token) = dataGenerator.generateUser()
+            val (participant, _) = dataGenerator.generateUser()
+            val event =
+                createEventInDb(
+                    createdBy = host.id!!,
+                    startsAt = Instant.now().plusSeconds(7200),
+                    endsAt = Instant.now().plusSeconds(10800),
+                    registrationStartsAt = Instant.now().plusSeconds(3600),
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
+                )
+
+            registrationRepository.save(
+                Registration(userId = participant.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED),
+            )
+
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token")
+                        // +3600 → +4500 으로 늦춤 (기존 값보다 이후, startsAt=+7200 이전)
+                        .content(mapper.writeValueAsString(UpdateEventRequest(registrationStartsAt = Instant.now().plusSeconds(4500))))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("REGISTRATION_START_CANNOT_DELAY_WITH_PARTICIPANTS"))
+        }
+
+        @Test
+        fun `확정 참가자 있을 때 신청 마감 시간을 현재 시각 이전으로 변경하면 400을 반환한다`() {
+            val (host, token) = dataGenerator.generateUser()
+            val (participant, _) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, registrationEndsAt = Instant.now().plusSeconds(3600))
+
+            registrationRepository.save(
+                Registration(userId = participant.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED),
+            )
+
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(registrationEndsAt = Instant.now().minusSeconds(60))))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS"))
+        }
+
+        @Test
+        fun `확정 참가자 수보다 정원을 줄이면 400을 반환한다`() {
+            val (host, token) = dataGenerator.generateUser()
+            val (p1, _) = dataGenerator.generateUser()
+            val (p2, _) = dataGenerator.generateUser()
+            val (p3, _) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 10)
+
+            registrationRepository.save(Registration(userId = p1.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = p2.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = p3.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 2)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS"))
+        }
+
+        @Test
+        fun `정원을 확정 참가자 수와 동일하게 줄일 수 있다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (confirmed, _) = dataGenerator.generateUser()
+            val (waiter, waiterToken) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 5, waitlistEnabled = true)
+
+            registrationRepository.save(Registration(userId = confirmed.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = waiter.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED))
+
+            // capacity 5 → 1 (확정자 수와 동일) — 허용됨
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 1)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.capacity").value(1))
+
+            // 대기자는 여전히 WAITLISTED — 정원이 늘지 않았으므로 전환 없음
+            mvc
+                .perform(
+                    get("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $waiterToken"),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("WAITLISTED"))
+        }
+
+        @Test
+        fun `정원을 늘리면 대기자가 확정 참가자로 전환된다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (waiter, waiterToken) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 1, waitlistEnabled = true)
+
+            registrationRepository.save(Registration(userId = host.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = waiter.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED))
+
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 2)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            mvc
+                .perform(
+                    get("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $waiterToken"),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("CONFIRMED"))
+        }
+
+        @Test
+        fun `확정 참가자 없을 때 신청 시작 시간과 정원을 함께 변경할 수 있다`() {
+            val (host, token) = dataGenerator.generateUser()
+            val event =
+                createEventInDb(
+                    createdBy = host.id!!,
+                    capacity = 10,
+                    startsAt = Instant.now().plusSeconds(7200),
+                    endsAt = Instant.now().plusSeconds(10800),
+                    registrationStartsAt = Instant.now().plusSeconds(3600),
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
+                )
+
+            val newRegistrationStartsAt = Instant.now().plusSeconds(3900)
+
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token")
+                        .content(
+                            mapper.writeValueAsString(
+                                UpdateEventRequest(
+                                    capacity = 5,
+                                    registrationStartsAt = newRegistrationStartsAt,
+                                ),
+                            ),
+                        ).contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.capacity").value(5))
         }
 
         // =================================================================
@@ -898,31 +1082,3 @@ class EventIntegrationTest
                 .andExpect(jsonPath("$.code").value("EVENT_HAS_CONFIRMED_REGISTRATIONS"))
         }
     }
-
-// =============================================================================
-// [구체화 필요 사항]
-//
-// 1. CreateEventRequest.capacity 필드 null 허용 여부:
-//    - DTO에서 capacity는 Int (non-nullable, 기본값 없음)로 선언되어 있어,
-//      JSON 역직렬화 시 누락되면 Jackson이 400 에러를 반환함.
-//    - 서비스의 validateCreateOrUpdate에는 EVENT_CAPACITY_REQUIRED(capacity==null) 검사가 있으나
-//      CreateEventRequest에서는 실제로 null이 올 수 없으므로, 이 분기는 업데이트 시에만 의미 있음.
-//    - 정책 확인 필요: capacity 생략 시 명시적인 400 + EVENT_CAPACITY_REQUIRED 응답이 필요하다면
-//      DTO를 Int?로 변경하거나, @JsonSetter(nulls = Nulls.FAIL) 등 추가 처리가 필요.
-//
-// 2. waitlistEnabled 필드 null 허용 여부:
-//    - CreateEventRequest.waitlistEnabled 역시 Boolean (non-nullable)로 선언되어,
-//      생략 시 Jackson 역직렬화 단계에서 400이 발생함.
-//    - 이것이 의도된 동작인지, 기본값(false)을 사용할 수 있도록 허용할지 명확화 필요.
-//
-// 3. 이벤트 수정 시 시간 범위 교차 검증:
-//    - update는 필드를 개별적으로 덮어쓴 후 validateCreateOrUpdate를 호출함.
-//    - 기존 이벤트의 startsAt=미래, 수정 요청에 startsAt만 더 미래로 변경하면
-//      기존 registrationEndsAt이 새 startsAt보다 여전히 이전인지 재검증됨.
-//    - 의도한 동작인지, 개별 필드 변경의 부작용으로 기존에 유효했던 조합이
-//      무효화되는 케이스에 대한 정책 명확화 필요.
-//
-// 4. GET /api/events/{publicId} 에서 비인증 요청 시 viewer.name이 null인지 확인:
-//    - requesterId가 null이면 viewerName = null로 설정되므로 viewer.name은 null이어야 함.
-//    - UserArgumentResolver가 Authorization 헤더 없을 때 null을 반환하는지 확인 필요.
-// =============================================================================
