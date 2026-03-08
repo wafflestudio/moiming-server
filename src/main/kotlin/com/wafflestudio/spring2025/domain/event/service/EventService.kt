@@ -464,6 +464,7 @@ class EventService(
         registrationEndsAt: Instant?,
         capacity: Int?,
         confirmedParticipants: Int,
+        now: Instant = Instant.now(),
     ) {
         if (confirmedParticipants <= 0) return
 
@@ -475,8 +476,7 @@ class EventService(
         }
 
         if (registrationEndsAt != null &&
-            event.registrationEndsAt != null &&
-            registrationEndsAt.isBefore(event.registrationEndsAt)
+            registrationEndsAt.isBefore(now)
         ) {
             throw EventValidationException(EventErrorCode.REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS)
         }
