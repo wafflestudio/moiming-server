@@ -40,4 +40,18 @@ class DataGenerator(
         val token = jwtTokenProvider.createToken(user.id!!)
         return user to token
     }
+
+    fun generateUserWithProfileImage(profileImageKey: String): Pair<User, String> {
+        val email = "user-${UUID.randomUUID()}@example.com"
+        val user =
+            userRepository.save(
+                User(
+                    email = email,
+                    name = "user",
+                    profileImage = profileImageKey,
+                ),
+            )
+        val token = jwtTokenProvider.createToken(user.id!!)
+        return user to token
+    }
 }
