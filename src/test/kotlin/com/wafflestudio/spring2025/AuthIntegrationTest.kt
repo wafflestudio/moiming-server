@@ -9,8 +9,13 @@ import com.wafflestudio.spring2025.domain.user.identity.model.UserIdentity
 import com.wafflestudio.spring2025.domain.user.identity.repository.UserIdentityRepository
 import com.wafflestudio.spring2025.domain.user.model.PendingUser
 import com.wafflestudio.spring2025.domain.user.repository.PendingUserRepository
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mindrot.jbcrypt.BCrypt
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -50,10 +55,11 @@ class AuthIntegrationTest
         // =================================================================
 
         @Test
-        fun `유효한 데이터로 회원가입 요청 시 204를 반환한다`() {
+        fun `유효한 데이터로 회원가입 요청 시 204를 반환하고 인증 이메일을 발송한다`() {
+            val email = "newuser-${UUID.randomUUID()}@example.com"
             val request =
                 SignupRequest(
-                    email = "newuser-${UUID.randomUUID()}@example.com",
+                    email = email,
                     name = "새사용자",
                     password = "password123",
                 )
@@ -64,6 +70,8 @@ class AuthIntegrationTest
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isNoContent)
+
+            verify(emailService).sendVerificationEmail(eq(email), any())
         }
 
         @Test
@@ -346,45 +354,9 @@ class AuthIntegrationTest
         }
 
         // =================================================================
-        // GET /api/users/me — 내 정보 조회
+        // GET /api/users/me — 로그아웃 블랙리스트 검증 (인증 흐름 관점)
+        // 기본 내 정보 조회 시나리오는 UserIntegrationTest에서 다룸
         // =================================================================
-
-        @Test
-        fun `유효한 토큰으로 내 정보 조회 시 200과 사용자 정보를 반환한다`() {
-            val (user, token) = dataGenerator.generateUser()
-
-            mvc
-                .perform(
-                    get("/api/users/me")
-                        .header("Authorization", "Bearer $token")
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isOk)
-                .andExpect(jsonPath("$.id").value(user.id))
-                .andExpect(jsonPath("$.email").value(user.email))
-                .andExpect(jsonPath("$.name").value(user.name))
-                .andExpect(jsonPath("$.profileImage").value(null as Any?))
-        }
-
-        @Test
-        fun `Authorization 헤더 없이 내 정보 조회 시 401을 반환한다`() {
-            mvc
-                .perform(
-                    get("/api/users/me")
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isUnauthorized)
-                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
-        }
-
-        @Test
-        fun `유효하지 않은 토큰으로 내 정보 조회 시 401을 반환한다`() {
-            mvc
-                .perform(
-                    get("/api/users/me")
-                        .header("Authorization", "Bearer invalid.token.value")
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isUnauthorized)
-                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
-        }
 
         @Test
         fun `로그아웃 후 블랙리스트된 토큰으로 내 정보 조회 시 401을 반환한다`() {
@@ -523,8 +495,8 @@ class AuthIntegrationTest
 
             // 새로운 PendingUser가 생성됐는지 확인 (코드가 교체됨)
             val newPendingUser = pendingUserRepository.findByEmail(email)!!
-            assert(newPendingUser.verificationCode != oldCode) { "인증 코드가 갱신되지 않았습니다" }
-            assert(newPendingUser.expiresAt.isAfter(Instant.now())) { "새로운 만료 시각이 현재보다 미래여야 합니다" }
+            assertNotEquals(oldCode, newPendingUser.verificationCode)
+            assertTrue(newPendingUser.expiresAt.isAfter(Instant.now()))
         }
 
         @Test
@@ -576,21 +548,3 @@ class AuthIntegrationTest
                 .andExpect(jsonPath("$.token").isNotEmpty)
         }
     }
-
-// =============================================================================
-// [구체화 필요 사항]
-//
-// 1. 소셜 가입 사용자 이메일 로그인 버그 (AuthService.login):
-//    - passwordHash가 null인 User로 로그인 시 BCrypt.checkpw(password, null)에서
-//      NullPointerException이 발생하여 500이 반환됨.
-//    - 올바른 동작: 401 LOGIN_FAILED 반환.
-//    - 수정 방향: `if (user.passwordHash == null || !BCrypt.checkpw(password, user.passwordHash))`
-//      형태로 null guard 추가 필요.
-//    - 관련 테스트: "비밀번호 없이 생성된 사용자(소셜 가입)로 이메일 로그인 시 401을 반환한다"
-//      → 현재 코드에서는 실패(red test)이며, 버그 수정 후 통과 예상.
-//
-// 2. 로그아웃 정책:
-//    - 현재 /api/auth/logout은 @AuthRequired가 없어 블랙리스트된 토큰으로도 204 반환.
-//    - 비즈니스 정책상 이미 로그아웃된 토큰으로 재로그아웃 시도를 어떻게 처리할지 명확화 필요.
-//    - 현재 구현은 silent no-op(조용히 무시). 에러 반환 정책이 필요하면 @AuthRequired 추가 고려.
-// =============================================================================
