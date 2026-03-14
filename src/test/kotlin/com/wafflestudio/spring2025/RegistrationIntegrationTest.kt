@@ -16,6 +16,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -350,6 +353,53 @@ class RegistrationIntegrationTest
             val hostParticipants = extractParticipants(hostResponse)
             assertTrue(hostParticipants.any { it.path("email").asText() == participant.email })
             assertTrue(hostParticipants.any { it.path("email").asText() == "guest@example.com" })
+        }
+
+        @Test
+        fun `동시에 여러 사용자가 신청해도 정원을 초과하지 않는다`() {
+            val capacity = 4
+            val totalUsers = 15
+
+            val (host, _) = dataGenerator.generateUser()
+            val event =
+                createEvent(
+                    createdBy = host.id!!,
+                    title = "동시성 테스트 이벤트",
+                    capacity = capacity,
+                    waitlistEnabled = true,
+                )
+
+            val tokens = (1..totalUsers).map { dataGenerator.generateUser().second }
+
+            val executor = Executors.newFixedThreadPool(totalUsers)
+            val startLatch = CountDownLatch(1)
+            val doneLatch = CountDownLatch(totalUsers)
+
+            tokens.forEach { token ->
+                executor.submit {
+                    try {
+                        startLatch.await()
+                        mvc.perform(
+                            post("/api/events/${event.publicId}/registrations")
+                                .header("Authorization", "Bearer $token")
+                                .content(mapper.writeValueAsString(CreateRegistrationRequest()))
+                                .contentType(MediaType.APPLICATION_JSON),
+                        )
+                    } finally {
+                        doneLatch.countDown()
+                    }
+                }
+            }
+
+            startLatch.countDown()
+            doneLatch.await(10, TimeUnit.SECONDS)
+            executor.shutdown()
+
+            val confirmed = registrationRepository.countByEventIdAndStatus(event.id!!, RegistrationStatus.CONFIRMED)
+            val waitlisted = registrationRepository.countByEventIdAndStatus(event.id!!, RegistrationStatus.WAITLISTED)
+
+            assertEquals(capacity.toLong(), confirmed, "CONFIRMED 수가 정원과 일치해야 합니다")
+            assertEquals((totalUsers - capacity).toLong(), waitlisted, "WAITLISTED 수가 정확해야 합니다")
         }
 
         private fun registerAsUser(
