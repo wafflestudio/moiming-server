@@ -1,18 +1,32 @@
 name: CD Pipeline - EC2 Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
 jobs:
   deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,7 +44,7 @@ jobs:
           push: true
           tags: |
             docker.io/picokosmos/spring-app:latest
-            docker.io/picokosmos/spring-app:${{ github.sha }}
+            docker.io/picokosmos/spring-app:${{ env.DEPLOY_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -66,7 +80,7 @@ jobs:
             EOF
 
             # Pull latest docker-compose file
-            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.prod.yml -o docker-compose.yml
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${{ env.DEPLOY_SHA }}/docker-compose.prod.yml -o docker-compose.yml
 
             # Pull latest images and restart
             docker compose pull
