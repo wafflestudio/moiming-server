@@ -55,11 +55,12 @@ class EventService(
     ): String {
         val actualRegistrationStartsAt = registrationStartsAt ?: Instant.now()
 
-        validateCreateOrUpdate(
+        validateCreateConstraints(registrationEndsAt)
+        validateInvariantConstraints(
             title = title,
+            capacity = capacity,
             startsAt = startsAt,
             endsAt = endsAt,
-            capacity = capacity,
             registrationStartsAt = actualRegistrationStartsAt,
             registrationEndsAt = registrationEndsAt,
         )
@@ -325,35 +326,36 @@ class EventService(
         val previousCapacity = event.capacity
 
         val confirmedParticipants = countConfirmedParticipants(eventId)
-        validateParticipantAwareUpdate(
-            event = event,
-            registrationStartsAt = registrationStartsAt,
-            registrationEndsAt = registrationEndsAt,
+        validateCapacityUpdate(
             capacity = capacity,
             confirmedParticipants = confirmedParticipants,
         )
 
-        title?.let {
-            if (it.isBlank()) throw EventValidationException(EventErrorCode.EVENT_TITLE_BLANK)
-            event.title = it.trim()
-        }
+        val mergedTitle = title?.trim() ?: event.title
+        val mergedCapacity = capacity ?: event.capacity
+        val mergedStartsAt = startsAt ?: event.startsAt
+        val mergedEndsAt = endsAt ?: event.endsAt
+        val mergedRegistrationStartsAt = registrationStartsAt ?: event.registrationStartsAt
+        val mergedRegistrationEndsAt = registrationEndsAt ?: event.registrationEndsAt
+
+        validateInvariantConstraints(
+            title = mergedTitle,
+            capacity = mergedCapacity,
+            startsAt = mergedStartsAt,
+            endsAt = mergedEndsAt,
+            registrationStartsAt = mergedRegistrationStartsAt,
+            registrationEndsAt = mergedRegistrationEndsAt,
+        )
+
+        event.title = mergedTitle
         description?.let { event.description = it }
         location?.let { event.location = it }
-        startsAt?.let { event.startsAt = it }
-        endsAt?.let { event.endsAt = it }
-        capacity?.let { event.capacity = it }
+        event.startsAt = mergedStartsAt
+        event.endsAt = mergedEndsAt
+        event.capacity = mergedCapacity
         waitlistEnabled?.let { event.waitlistEnabled = it }
-        registrationStartsAt?.let { event.registrationStartsAt = it }
-        registrationEndsAt?.let { event.registrationEndsAt = it }
-
-        validateCreateOrUpdate(
-            title = event.title,
-            startsAt = event.startsAt,
-            endsAt = event.endsAt,
-            capacity = event.capacity,
-            registrationStartsAt = event.registrationStartsAt,
-            registrationEndsAt = event.registrationEndsAt,
-        )
+        event.registrationStartsAt = mergedRegistrationStartsAt
+        event.registrationEndsAt = mergedRegistrationEndsAt
 
         val savedEvent = eventRepository.save(event)
         if (isCapacityIncreased(previousCapacity, savedEvent.capacity)) {
@@ -395,14 +397,22 @@ class EventService(
         }
     }
 
-    private fun validateCreateOrUpdate(
+    private fun validateCreateConstraints(
+        registrationEndsAt: Instant,
+        now: Instant = Instant.now(),
+    ) {
+        if (registrationEndsAt.isBefore(now)) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_IN_PAST)
+        }
+    }
+
+    private fun validateInvariantConstraints(
         title: String,
+        capacity: Int?,
         startsAt: Instant?,
         endsAt: Instant?,
-        capacity: Int?,
         registrationStartsAt: Instant?,
-        registrationEndsAt: Instant?,
-        now: Instant = Instant.now(),
+        registrationEndsAt: Instant,
     ) {
         // 제목 검증
         if (title.isBlank()) {
@@ -417,40 +427,25 @@ class EventService(
             throw EventValidationException(EventErrorCode.EVENT_CAPACITY_INVALID)
         }
 
-        // 모임 시간 검증
-        if (startsAt != null && startsAt.isBefore(now)) {
-            throw EventValidationException(EventErrorCode.EVENT_STARTS_IN_PAST)
-        }
-        if (endsAt != null && endsAt.isBefore(now)) {
-            throw EventValidationException(EventErrorCode.EVENT_ENDS_IN_PAST)
-        }
-        if (startsAt != null && endsAt != null && !startsAt.isBefore(endsAt)) {
+        // 모임 시간 검증: 일정 시작 ≤ 일정 끝
+        if (startsAt != null && endsAt != null && startsAt.isAfter(endsAt)) {
             throw EventValidationException(EventErrorCode.EVENT_TIME_RANGE_INVALID)
         }
 
-        // 신청 기간 검증
-        if (registrationStartsAt != null && registrationStartsAt.isBefore(now)) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_IN_PAST)
-        }
-        if (registrationEndsAt != null && registrationEndsAt.isBefore(now)) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_IN_PAST)
-        }
-        if (registrationStartsAt != null &&
-            registrationEndsAt != null &&
-            registrationStartsAt.isAfter(registrationEndsAt)
-        ) {
+        // 신청 기간 검증: 모집 시작 < 모집 마감 (strict)
+        if (registrationStartsAt != null && !registrationStartsAt.isBefore(registrationEndsAt)) {
             throw EventValidationException(EventErrorCode.REGISTRATION_TIME_RANGE_INVALID)
         }
-        if (registrationStartsAt != null &&
-            startsAt != null &&
-            registrationStartsAt.isAfter(startsAt)
-        ) {
+        // 모집 시작 ≤ 일정 시작
+        if (registrationStartsAt != null && startsAt != null && registrationStartsAt.isAfter(startsAt)) {
             throw EventValidationException(EventErrorCode.REGISTRATION_STARTS_AFTER_EVENT_START)
         }
-        if (registrationEndsAt != null &&
-            startsAt != null &&
-            registrationEndsAt.isAfter(startsAt)
-        ) {
+        // 모집 마감 ≤ 일정 시작
+        if (startsAt != null && registrationEndsAt.isAfter(startsAt)) {
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
+        }
+        // 모집 마감 ≤ 일정 끝 (행사시작 없을 때도 직접 체크)
+        if (endsAt != null && registrationEndsAt.isAfter(endsAt)) {
             throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
         }
     }
@@ -460,28 +455,11 @@ class EventService(
             .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
             .toInt()
 
-    private fun validateParticipantAwareUpdate(
-        event: Event,
-        registrationStartsAt: Instant?,
-        registrationEndsAt: Instant?,
+    private fun validateCapacityUpdate(
         capacity: Int?,
         confirmedParticipants: Int,
-        now: Instant = Instant.now(),
     ) {
         if (confirmedParticipants <= 0) return
-
-        if (registrationStartsAt != null &&
-            event.registrationStartsAt != null &&
-            registrationStartsAt.isAfter(event.registrationStartsAt)
-        ) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_START_CANNOT_DELAY_WITH_PARTICIPANTS)
-        }
-
-        if (registrationEndsAt != null &&
-            registrationEndsAt.isBefore(now)
-        ) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS)
-        }
 
         if (capacity != null && capacity < confirmedParticipants) {
             throw EventValidationException(EventErrorCode.CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS)
@@ -499,12 +477,12 @@ class EventService(
         confirmedCount: Int,
         waitlistEnabled: Boolean,
         registrationStartsAt: Instant?,
-        registrationEndsAt: Instant?,
+        registrationEndsAt: Instant,
         now: Instant = Instant.now(),
     ): CapabilitiesInfo {
         val withinWindow =
             (registrationStartsAt?.let { !now.isBefore(it) } ?: true) &&
-                (registrationEndsAt?.let { !now.isAfter(it) } ?: true)
+                !now.isAfter(registrationEndsAt)
 
         val isFull =
             capacity != null && confirmedCount >= capacity
