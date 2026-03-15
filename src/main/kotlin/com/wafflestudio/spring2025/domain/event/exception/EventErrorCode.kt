@@ -93,9 +93,4 @@ enum class EventErrorCode(
         title = "정원이 초과되었습니다.",
         message = "모임 정원이 가득 차\n더 이상 신청할 수 없습니다.",
     ),
-    EVENT_HAS_CONFIRMED_REGISTRATIONS(
-        httpStatusCode = HttpStatus.CONFLICT,
-        title = "확정된 참가자가 있습니다.",
-        message = "확정된 참가자가 있는 모임은 삭제할 수 없습니다.",
-    ),
 }
