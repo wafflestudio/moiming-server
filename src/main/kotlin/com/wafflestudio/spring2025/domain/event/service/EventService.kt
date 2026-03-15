@@ -328,12 +328,6 @@ class EventService(
         if (!eventLockRepository.lockById(eventId)) throw EventNotFoundException()
         val previousCapacity = event.capacity
 
-        val confirmedParticipants = countConfirmedParticipants(eventId)
-        validateCapacityUpdate(
-            capacity = capacity,
-            confirmedParticipants = confirmedParticipants,
-        )
-
         val mergedTitle = title?.trim() ?: event.title
         val mergedCapacity = capacity ?: event.capacity
         val mergedStartsAt = startsAt ?: event.startsAt
@@ -363,6 +357,9 @@ class EventService(
         val savedEvent = eventRepository.save(event)
         if (isCapacityIncreased(previousCapacity, savedEvent.capacity)) {
             waitlistReconciliationService.reconcileWaitlist(eventId)
+        }
+        if (isCapacityDecreased(previousCapacity, savedEvent.capacity)) {
+            waitlistReconciliationService.demoteToWaitlist(eventId, savedEvent.capacity!!)
         }
         return savedEvent
     }
@@ -481,26 +478,15 @@ class EventService(
         }
     }
 
-    private fun countConfirmedParticipants(eventId: Long): Int =
-        registrationRepository
-            .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
-            .toInt()
-
-    private fun validateCapacityUpdate(
-        capacity: Int?,
-        confirmedParticipants: Int,
-    ) {
-        if (confirmedParticipants <= 0) return
-
-        if (capacity != null && capacity < confirmedParticipants) {
-            throw EventValidationException(EventErrorCode.CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS)
-        }
-    }
-
     private fun isCapacityIncreased(
         previousCapacity: Int?,
         newCapacity: Int?,
     ): Boolean = previousCapacity != null && newCapacity != null && newCapacity > previousCapacity
+
+    private fun isCapacityDecreased(
+        previousCapacity: Int?,
+        newCapacity: Int?,
+    ): Boolean = previousCapacity != null && newCapacity != null && newCapacity < previousCapacity
 
     private fun afterCommit(action: () -> Unit) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {

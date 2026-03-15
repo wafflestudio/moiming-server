@@ -674,6 +674,64 @@ RegistrationService(
     }
 
     @Transactional
+    override fun demoteToWaitlist(eventId: Long, newCapacity: Int) {
+        eventLockRepository.lockById(eventId)
+
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+
+        val confirmedRegs =
+            registrationRepository.findByEventIdAndStatusOrderByCreatedAtDescIdDesc(
+                eventId,
+                RegistrationStatus.CONFIRMED,
+            )
+
+        val excessCount = confirmedRegs.size - newCapacity
+        if (excessCount <= 0) return
+
+        val toDemote = confirmedRegs.take(excessCount)
+        toDemote.forEach { it.status = RegistrationStatus.WAITLISTED }
+        registrationRepository.saveAll(toDemote)
+
+        val demotedPublicIds = toDemote.map { it.registrationPublicId }
+        val waitlistPositions =
+            registrationRepository
+                .findWaitlistPositionsByRegistrationPublicIds(
+                    eventId = eventId,
+                    status = RegistrationStatus.WAITLISTED,
+                    registrationPublicIds = demotedPublicIds,
+                ).associate { it.registrationPublicId to it.waitlistNumber.toInt() }
+
+        val userIds = toDemote.mapNotNull { it.userId }.distinct()
+        val usersById = userRepository.findAllById(userIds).associateBy { it.id!! }
+
+        val emailDataList =
+            toDemote.mapNotNull { reg ->
+                val user = reg.userId?.let { usersById[it] }
+                val toEmail = user?.email ?: reg.guestEmail
+                if (toEmail.isNullOrBlank()) return@mapNotNull null
+                EmailService.DemotionEmailData(
+                    toEmail = toEmail,
+                    name = user?.name ?: reg.guestName ?: "참여자",
+                    eventTitle = event.title,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    newCapacity = newCapacity,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
+                    description = event.description,
+                    publicId = event.publicId,
+                    registrationPublicId = reg.registrationPublicId,
+                    waitingNum = waitlistPositions[reg.registrationPublicId],
+                )
+            }
+
+        afterCommit {
+            emailDataList.forEach { emailService.sendDemotionEmail(it) }
+        }
+    }
+
+    @Transactional
     override fun reconcileWaitlist(eventId: Long) {
         eventLockRepository.lockById(eventId)
 
