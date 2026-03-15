@@ -50,15 +50,17 @@ class EventService(
         capacity: Int?,
         waitlistEnabled: Boolean,
         registrationStartsAt: Instant?,
-        registrationEndsAt: Instant?,
+        registrationEndsAt: Instant,
         createdBy: Long,
     ): String {
+        val actualRegistrationStartsAt = registrationStartsAt ?: Instant.now()
+
         validateCreateOrUpdate(
             title = title,
             startsAt = startsAt,
             endsAt = endsAt,
             capacity = capacity,
-            registrationStartsAt = registrationStartsAt,
+            registrationStartsAt = actualRegistrationStartsAt,
             registrationEndsAt = registrationEndsAt,
         )
 
@@ -72,7 +74,7 @@ class EventService(
                 endsAt = endsAt,
                 capacity = capacity,
                 waitlistEnabled = waitlistEnabled,
-                registrationStartsAt = registrationStartsAt,
+                registrationStartsAt = actualRegistrationStartsAt,
                 registrationEndsAt = registrationEndsAt,
                 createdBy = createdBy,
             )
