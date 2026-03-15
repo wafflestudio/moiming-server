@@ -55,8 +55,8 @@ class EventIntegrationTest
             title: String = "테스트 이벤트",
             capacity: Int = 10,
             waitlistEnabled: Boolean = false,
-            startsAt: Instant = Instant.now().plusSeconds(3600),
-            endsAt: Instant = Instant.now().plusSeconds(7200),
+            startsAt: Instant = Instant.now().plusSeconds(7200),
+            endsAt: Instant = Instant.now().plusSeconds(10800),
             registrationStartsAt: Instant? = null,
             registrationEndsAt: Instant = Instant.now().plusSeconds(5400),
         ): Event =
@@ -170,14 +170,14 @@ class EventIntegrationTest
         @Test
         fun `모임 시작 시간이 신청 마감 시간보다 이르면 이벤트 생성 요청 시 400을 반환한다`() {
             val (_, token) = dataGenerator.generateUser()
-            // startsAt=now-3600 이면 registrationEndsAt(+5400) > startsAt(-3600) 위반
+            // registrationEndsAt(+5400) > startsAt(+3600) 위반
             val request =
                 CreateEventRequest(
                     title = "정기 모임",
                     capacity = 10,
                     waitlistEnabled = false,
-                    startsAt = Instant.now().minusSeconds(3600),
-                    endsAt = Instant.now().plusSeconds(3600),
+                    startsAt = Instant.now().plusSeconds(3600),
+                    endsAt = Instant.now().plusSeconds(7200),
                     registrationEndsAt = Instant.now().plusSeconds(5400),
                 )
 
