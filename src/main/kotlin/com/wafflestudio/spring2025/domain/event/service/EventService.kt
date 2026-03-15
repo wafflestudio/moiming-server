@@ -375,6 +375,7 @@ class EventService(
         val event = getEventByPublicId(publicId)
         requireCreator(event, requesterId)
         val eventId = requireNotNull(event.id)
+        eventLockRepository.lockById(eventId)
 
         // 알림 대상: CONFIRMED + WAITLISTED (BANNED 제외)
         val registrationsToNotify =
@@ -382,7 +383,7 @@ class EventService(
                 .filter { it.status == RegistrationStatus.CONFIRMED || it.status == RegistrationStatus.WAITLISTED }
 
         // 이메일 데이터 구성 (삭제 전에 user 정보 조회)
-        val hostUser = userRepository.findById(event.createdBy).orElseThrow { EventNotFoundException() }
+        val hostUser = userRepository.findById(event.createdBy).orElse(null)
         val userIds = registrationsToNotify.mapNotNull { it.userId }.distinct()
         val usersById = userRepository.findAllById(userIds).associateBy { it.id!! }
 
@@ -399,7 +400,7 @@ class EventService(
                     endsAt = event.endsAt,
                     location = event.location,
                     description = event.description,
-                    hostEmail = hostUser.email,
+                    hostEmail = hostUser?.email ?: "",
                 )
             }
 
