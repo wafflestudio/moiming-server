@@ -322,10 +322,11 @@ class EventService(
         registrationEndsAt: Instant?,
         requesterId: Long,
     ): Event {
-        val event = getEventByPublicId(publicId)
-        requireCreator(event, requesterId)
-        val eventId = requireNotNull(event.id) { "Event id is null: publicId=$publicId" }
+        val eventForAuth = getEventByPublicId(publicId)
+        requireCreator(eventForAuth, requesterId)
+        val eventId = requireNotNull(eventForAuth.id) { "Event id is null: publicId=$publicId" }
         if (!eventLockRepository.lockById(eventId)) throw EventNotFoundException()
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
         val previousCapacity = event.capacity
 
         val mergedTitle = title?.trim() ?: event.title
