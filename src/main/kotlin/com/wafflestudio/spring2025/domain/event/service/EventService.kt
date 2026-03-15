@@ -325,7 +325,7 @@ class EventService(
         val event = getEventByPublicId(publicId)
         requireCreator(event, requesterId)
         val eventId = requireNotNull(event.id) { "Event id is null: publicId=$publicId" }
-        eventLockRepository.lockById(eventId)
+        if (!eventLockRepository.lockById(eventId)) throw EventNotFoundException()
         val previousCapacity = event.capacity
 
         val confirmedParticipants = countConfirmedParticipants(eventId)
@@ -375,7 +375,7 @@ class EventService(
         val event = getEventByPublicId(publicId)
         requireCreator(event, requesterId)
         val eventId = requireNotNull(event.id)
-        eventLockRepository.lockById(eventId)
+        if (!eventLockRepository.lockById(eventId)) throw EventNotFoundException()
 
         // 알림 대상: CONFIRMED + WAITLISTED (BANNED 제외)
         val registrationsToNotify =
