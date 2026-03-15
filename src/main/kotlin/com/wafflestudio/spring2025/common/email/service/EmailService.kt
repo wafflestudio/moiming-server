@@ -118,6 +118,17 @@ class EmailService(
         val description: String?,
     )
 
+    data class EventCancellationEmailData(
+        val toEmail: String,
+        val name: String,
+        val eventTitle: String?,
+        val startsAt: Instant?,
+        val endsAt: Instant?,
+        val location: String?,
+        val description: String?,
+        val hostEmail: String,
+    )
+
     fun sendRegistrationStatusEmail(data: RegistrationStatusEmailData) {
         when (data.status) {
             RegistrationStatus.CONFIRMED -> {
@@ -219,6 +230,25 @@ class EmailService(
         )
 
         logger.info("신청 삭제 정보가 ${data.toEmail} 로 전달되었습니다.")
+    }
+
+    fun sendEventCancellationEmail(data: EventCancellationEmailData) {
+        val htmlContent =
+            loadTemplate("event-cancelled.html")
+                .replace("{name}", data.name)
+                .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                .replace("{location}", formatLocation(data.location))
+                .replace("{hostEmail}", data.hostEmail)
+                .replace("{description}", formatDescription(data.description))
+
+        sendHtmlEmail(
+            to = data.toEmail,
+            subject = emailName("일정 취소", data.eventTitle),
+            htmlContent = htmlContent,
+        )
+
+        logger.info("일정 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
     }
 
     fun sendWaitlistPromotionEmail(
