@@ -947,25 +947,121 @@ class EventIntegrationTest
         }
 
         @Test
-        fun `확정 참가자 수보다 정원을 줄이면 400을 반환한다`() {
-            val (host, token) = dataGenerator.generateUser()
-            val (p1, _) = dataGenerator.generateUser()
-            val (p2, _) = dataGenerator.generateUser()
-            val (p3, _) = dataGenerator.generateUser()
-            val event = createEventInDb(createdBy = host.id!!, capacity = 10)
+        fun `정원을 확정 참가자 수보다 줄이면 초과 참가자가 대기로 강등된다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (p1, p1Token) = dataGenerator.generateUser()
+            val (p2, p2Token) = dataGenerator.generateUser()
+            val (p3, p3Token) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 10, waitlistEnabled = true)
 
             registrationRepository.save(Registration(userId = p1.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            Thread.sleep(10)
             registrationRepository.save(Registration(userId = p2.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            Thread.sleep(10)
             registrationRepository.save(Registration(userId = p3.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
 
+            // capacity 10 → 2: 확정자 3명 중 가장 최근 확정된 p3 1명이 강등
             mvc
                 .perform(
                     put("/api/events/${event.publicId}")
-                        .header("Authorization", "Bearer $token")
+                        .header("Authorization", "Bearer $hostToken")
                         .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 2)))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS"))
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.capacity").value(2))
+
+            mvc
+                .perform(get("/api/events/${event.publicId}").header("Authorization", "Bearer $p1Token"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("CONFIRMED"))
+
+            mvc
+                .perform(get("/api/events/${event.publicId}").header("Authorization", "Bearer $p2Token"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("CONFIRMED"))
+
+            mvc
+                .perform(get("/api/events/${event.publicId}").header("Authorization", "Bearer $p3Token"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("WAITLISTED"))
+        }
+
+        @Test
+        fun `정원 축소 시 가장 최근 확정된 참가자부터 강등된다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (early, earlyToken) = dataGenerator.generateUser()
+            val (late, lateToken) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 10, waitlistEnabled = true)
+
+            registrationRepository.save(Registration(userId = early.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            Thread.sleep(20)
+            registrationRepository.save(Registration(userId = late.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+
+            // capacity 10 → 1: 더 늦게 확정된 late만 강등
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 1)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            mvc
+                .perform(get("/api/events/${event.publicId}").header("Authorization", "Bearer $earlyToken"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("CONFIRMED"))
+
+            mvc
+                .perform(get("/api/events/${event.publicId}").header("Authorization", "Bearer $lateToken"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("WAITLISTED"))
+        }
+
+        @Test
+        fun `정원 축소로 강등 시 기존 대기자는 영향 없다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (confirmed, _) = dataGenerator.generateUser()
+            val (waiter, waiterToken) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 5, waitlistEnabled = true)
+
+            registrationRepository.save(Registration(userId = confirmed.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = waiter.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED))
+
+            // confirmed=1 == newCapacity=1 → 강등 없음, 기존 대기자도 그대로
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 1)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            mvc
+                .perform(get("/api/events/${event.publicId}").header("Authorization", "Bearer $waiterToken"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.viewer.status").value("WAITLISTED"))
+        }
+
+        @Test
+        fun `정원 축소로 강등된 참가자에게 이메일이 발송된다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (p1, _) = dataGenerator.generateUser()
+            val (p2, _) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 10, waitlistEnabled = true)
+
+            registrationRepository.save(Registration(userId = p1.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = p2.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+
+            // capacity 10 → 1: 1명 강등 → sendDemotionEmail 1회 호출
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(capacity = 1)))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            verify(emailService, times(1)).sendDemotionEmail(any())
         }
 
         @Test
