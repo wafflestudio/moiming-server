@@ -168,8 +168,9 @@ class EventIntegrationTest
         }
 
         @Test
-        fun `모임 시작 시간이 과거이면 이벤트 생성 요청 시 400을 반환한다`() {
+        fun `모임 시작 시간이 신청 마감 시간보다 이르면 이벤트 생성 요청 시 400을 반환한다`() {
             val (_, token) = dataGenerator.generateUser()
+            // startsAt=now-3600 이면 registrationEndsAt(+5400) > startsAt(-3600) 위반
             val request =
                 CreateEventRequest(
                     title = "정기 모임",
@@ -187,30 +188,7 @@ class EventIntegrationTest
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("EVENT_STARTS_IN_PAST"))
-        }
-
-        @Test
-        fun `모임 종료 시간이 과거이면 이벤트 생성 요청 시 400을 반환한다`() {
-            val (_, token) = dataGenerator.generateUser()
-            val request =
-                CreateEventRequest(
-                    title = "정기 모임",
-                    capacity = 10,
-                    waitlistEnabled = false,
-                    startsAt = null,
-                    endsAt = Instant.now().minusSeconds(3600),
-                    registrationEndsAt = Instant.now().plusSeconds(5400),
-                )
-
-            mvc
-                .perform(
-                    post("/api/events")
-                        .header("Authorization", "Bearer $token")
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("EVENT_ENDS_IN_PAST"))
+                .andExpect(jsonPath("$.code").value("REGISTRATION_ENDS_AFTER_EVENT_START"))
         }
 
         @Test
@@ -237,8 +215,9 @@ class EventIntegrationTest
         }
 
         @Test
-        fun `신청 시작 시간이 과거이면 이벤트 생성 요청 시 400을 반환한다`() {
+        fun `신청 시작 시간이 과거여도 이벤트를 생성할 수 있다`() {
             val (_, token) = dataGenerator.generateUser()
+            // 과거 registrationStartsAt = 이미 모집이 시작된 것으로 허용
             val request =
                 CreateEventRequest(
                     title = "정기 모임",
@@ -254,8 +233,7 @@ class EventIntegrationTest
                         .header("Authorization", "Bearer $token")
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("REGISTRATION_STARTS_IN_PAST"))
+                ).andExpect(status().isOk)
         }
 
         @Test
@@ -825,8 +803,9 @@ class EventIntegrationTest
         }
 
         @Test
-        fun `모임 시작 시간을 과거로 수정 요청 시 400을 반환한다`() {
+        fun `모임 시작 시간을 신청 마감 시간보다 이전으로 수정하면 400을 반환한다`() {
             val (user, token) = dataGenerator.generateUser()
+            // 기본 registrationEndsAt=now+5400 → startsAt=now-3600 으로 변경하면 역전
             val event = createEventInDb(createdBy = user.id!!)
 
             mvc
@@ -836,7 +815,7 @@ class EventIntegrationTest
                         .content(mapper.writeValueAsString(UpdateEventRequest(startsAt = Instant.now().minusSeconds(3600))))
                         .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("EVENT_STARTS_IN_PAST"))
+                .andExpect(jsonPath("$.code").value("REGISTRATION_ENDS_AFTER_EVENT_START"))
         }
 
         @Test
@@ -880,7 +859,7 @@ class EventIntegrationTest
         }
 
         @Test
-        fun `확정 참가자 있을 때 신청 시작 시간을 늦추면 400을 반환한다`() {
+        fun `확정 참가자 있어도 신청 시작 시간을 늦출 수 있다`() {
             val (host, token) = dataGenerator.generateUser()
             val (participant, _) = dataGenerator.generateUser()
             val event =
@@ -900,15 +879,14 @@ class EventIntegrationTest
                 .perform(
                     put("/api/events/${event.publicId}")
                         .header("Authorization", "Bearer $token")
-                        // +3600 → +4500 으로 늦춤 (기존 값보다 이후, startsAt=+7200 이전)
+                        // +3600 → +4500 으로 늦춤 — 기존 신청자 영향 없이 모집 중단
                         .content(mapper.writeValueAsString(UpdateEventRequest(registrationStartsAt = Instant.now().plusSeconds(4500))))
                         .contentType(MediaType.APPLICATION_JSON),
-                ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("REGISTRATION_START_CANNOT_DELAY_WITH_PARTICIPANTS"))
+                ).andExpect(status().isOk)
         }
 
         @Test
-        fun `확정 참가자 있을 때 신청 마감 시간을 현재 시각 이전으로 변경하면 400을 반환한다`() {
+        fun `확정 참가자 있어도 신청 마감 시간을 과거로 앞당길 수 있다`() {
             val (host, token) = dataGenerator.generateUser()
             val (participant, _) = dataGenerator.generateUser()
             val event = createEventInDb(createdBy = host.id!!, registrationEndsAt = Instant.now().plusSeconds(3600))
@@ -921,10 +899,47 @@ class EventIntegrationTest
                 .perform(
                     put("/api/events/${event.publicId}")
                         .header("Authorization", "Bearer $token")
+                        // 모집 마감을 현재 이전으로 앞당김 — 모집 중단, 기존 신청자 영향 없음
                         .content(mapper.writeValueAsString(UpdateEventRequest(registrationEndsAt = Instant.now().minusSeconds(60))))
                         .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+        }
+
+        @Test
+        fun `신청 시작 시간과 신청 마감 시간이 같으면 400을 반환한다`() {
+            val (_, token) = dataGenerator.generateUser()
+            val sameTime = Instant.now().plusSeconds(3600)
+            val request =
+                CreateEventRequest(
+                    title = "정기 모임",
+                    capacity = 10,
+                    waitlistEnabled = false,
+                    registrationStartsAt = sameTime,
+                    registrationEndsAt = sameTime,
+                )
+
+            mvc
+                .perform(
+                    post("/api/events")
+                        .header("Authorization", "Bearer $token")
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON),
                 ).andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.code").value("REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS"))
+                .andExpect(jsonPath("$.code").value("REGISTRATION_TIME_RANGE_INVALID"))
+        }
+
+        @Test
+        fun `일정 수정 시 신청 마감 시간을 과거로 앞당길 수 있다`() {
+            val (user, token) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = user.id!!, registrationEndsAt = Instant.now().plusSeconds(3600))
+
+            mvc
+                .perform(
+                    put("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token")
+                        .content(mapper.writeValueAsString(UpdateEventRequest(registrationEndsAt = Instant.now().minusSeconds(60))))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
         }
 
         @Test
