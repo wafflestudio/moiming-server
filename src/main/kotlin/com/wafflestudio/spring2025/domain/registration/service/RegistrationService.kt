@@ -254,6 +254,10 @@ RegistrationService(
 
         eventLockRepository.lockById(registration.eventId)
 
+        if (!isRegistrationEnabled(event)) {
+            throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
+        }
+
         val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
         registrationRepository.deleteById(requireNotNull(registration.id))
 
@@ -375,10 +379,6 @@ RegistrationService(
         val registration =
             registrationRepository.lockByRegistrationPublicId(registrationId)
                 ?: throw RegistrationNotFoundException()
-
-        if (!isRegistrationEnabled(event)) {
-            throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
-        }
 
         val isHost = userId != null && userId == event.createdBy
 //        val isRegistrant = userId != null && registration.userId == userId
