@@ -664,7 +664,10 @@ RegistrationService(
     }
 
     @Transactional
-    override fun demoteToWaitlist(eventId: Long, newCapacity: Int) {
+    override fun demoteToWaitlist(
+        eventId: Long,
+        newCapacity: Int,
+    ) {
         eventLockRepository.lockById(eventId)
 
         val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
