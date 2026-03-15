@@ -319,6 +319,187 @@ class RegistrationIntegrationTest
         }
 
         @Test
+        fun `모집 시작 전에는 자발적 취소를 할 수 없다`() {
+            val (host, _) = dataGenerator.generateUser()
+            val (participant, participantToken) = dataGenerator.generateUser()
+            val now = Instant.now()
+            val event =
+                createEvent(
+                    createdBy = host.id!!,
+                    title = "Before Registration Opens - Cancel",
+                    registrationStartsAt = now.plusSeconds(3600),
+                    registrationEndsAt = now.plusSeconds(7200),
+                )
+            val registration =
+                registrationRepository.save(
+                    Registration(
+                        userId = participant.id!!,
+                        eventId = event.id!!,
+                        status = RegistrationStatus.CONFIRMED,
+                    ),
+                )
+
+            mvc
+                .perform(
+                    delete("/api/registrations/${registration.registrationPublicId}")
+                        .header("Authorization", "Bearer $participantToken")
+                        .content(mapper.writeValueAsString(DeleteRegistrationRequest()))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("NOT_WITHIN_REGISTRATION_WINDOW"))
+        }
+
+        @Test
+        fun `모집 마감 후에는 자발적 취소를 할 수 없다`() {
+            val (host, _) = dataGenerator.generateUser()
+            val (participant, participantToken) = dataGenerator.generateUser()
+            val now = Instant.now()
+            val event =
+                createEvent(
+                    createdBy = host.id!!,
+                    title = "After Registration Closed - Cancel",
+                    registrationStartsAt = now.minusSeconds(7200),
+                    registrationEndsAt = now.minusSeconds(60),
+                )
+            val registration =
+                registrationRepository.save(
+                    Registration(
+                        userId = participant.id!!,
+                        eventId = event.id!!,
+                        status = RegistrationStatus.CONFIRMED,
+                    ),
+                )
+
+            mvc
+                .perform(
+                    delete("/api/registrations/${registration.registrationPublicId}")
+                        .header("Authorization", "Bearer $participantToken")
+                        .content(mapper.writeValueAsString(DeleteRegistrationRequest()))
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("NOT_WITHIN_REGISTRATION_WINDOW"))
+        }
+
+        @Test
+        fun `모집 시작 전에도 주최자는 BANNED 처리를 할 수 있다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (participant, _) = dataGenerator.generateUser()
+            val now = Instant.now()
+            val event =
+                createEvent(
+                    createdBy = host.id!!,
+                    title = "Ban Before Registration Opens",
+                    registrationStartsAt = now.plusSeconds(3600),
+                    registrationEndsAt = now.plusSeconds(7200),
+                )
+            val registration =
+                registrationRepository.save(
+                    Registration(
+                        userId = participant.id!!,
+                        eventId = event.id!!,
+                        status = RegistrationStatus.CONFIRMED,
+                    ),
+                )
+
+            mvc
+                .perform(
+                    patch("/api/registrations/${registration.registrationPublicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(
+                            mapper.writeValueAsString(
+                                UpdateRegistrationStatusRequest(status = RegistrationStatus.BANNED),
+                            ),
+                        ).contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            assertEquals(RegistrationStatus.BANNED, findRegistration(registration.registrationPublicId).status)
+        }
+
+        @Test
+        fun `모집 마감 후에도 주최자는 BANNED 처리를 할 수 있다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (participant, _) = dataGenerator.generateUser()
+            val now = Instant.now()
+            val event =
+                createEvent(
+                    createdBy = host.id!!,
+                    title = "Ban After Registration Closed",
+                    registrationStartsAt = now.minusSeconds(7200),
+                    registrationEndsAt = now.minusSeconds(60),
+                )
+            val registration =
+                registrationRepository.save(
+                    Registration(
+                        userId = participant.id!!,
+                        eventId = event.id!!,
+                        status = RegistrationStatus.CONFIRMED,
+                    ),
+                )
+
+            mvc
+                .perform(
+                    patch("/api/registrations/${registration.registrationPublicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(
+                            mapper.writeValueAsString(
+                                UpdateRegistrationStatusRequest(status = RegistrationStatus.BANNED),
+                            ),
+                        ).contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            assertEquals(RegistrationStatus.BANNED, findRegistration(registration.registrationPublicId).status)
+        }
+
+        @Test
+        fun `모집 마감 후 BANNED 처리 시 대기자는 승격되지 않는다`() {
+            val (host, hostToken) = dataGenerator.generateUser()
+            val (confirmedUser, _) = dataGenerator.generateUser()
+            val (waitlistedUser, _) = dataGenerator.generateUser()
+            val now = Instant.now()
+            val event =
+                createEvent(
+                    createdBy = host.id!!,
+                    title = "Ban After Closed - No Promotion",
+                    capacity = 1,
+                    waitlistEnabled = true,
+                    registrationStartsAt = now.minusSeconds(7200),
+                    registrationEndsAt = now.minusSeconds(60),
+                )
+            val confirmedReg =
+                registrationRepository.save(
+                    Registration(
+                        userId = confirmedUser.id!!,
+                        eventId = event.id!!,
+                        status = RegistrationStatus.CONFIRMED,
+                    ),
+                )
+            val waitlistedReg =
+                registrationRepository.save(
+                    Registration(
+                        userId = waitlistedUser.id!!,
+                        eventId = event.id!!,
+                        status = RegistrationStatus.WAITLISTED,
+                    ),
+                )
+
+            mvc
+                .perform(
+                    patch("/api/registrations/${confirmedReg.registrationPublicId}")
+                        .header("Authorization", "Bearer $hostToken")
+                        .content(
+                            mapper.writeValueAsString(
+                                UpdateRegistrationStatusRequest(status = RegistrationStatus.BANNED),
+                            ),
+                        ).contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+
+            assertEquals(RegistrationStatus.BANNED, findRegistration(confirmedReg.registrationPublicId).status)
+            assertEquals(RegistrationStatus.WAITLISTED, findRegistration(waitlistedReg.registrationPublicId).status)
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────
+
+        @Test
         fun `주최자만 참여자 이메일을 볼 수 있고 참여자는 볼 수 없다`() {
             val (host, hostToken) = dataGenerator.generateUser()
             val (participant, participantToken) = dataGenerator.generateUser()
