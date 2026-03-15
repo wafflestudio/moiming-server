@@ -58,7 +58,7 @@ class EventIntegrationTest
             startsAt: Instant = Instant.now().plusSeconds(3600),
             endsAt: Instant = Instant.now().plusSeconds(7200),
             registrationStartsAt: Instant? = null,
-            registrationEndsAt: Instant? = null,
+            registrationEndsAt: Instant = Instant.now().plusSeconds(5400),
         ): Event =
             eventRepository.save(
                 Event(
@@ -177,6 +177,7 @@ class EventIntegrationTest
                     waitlistEnabled = false,
                     startsAt = Instant.now().minusSeconds(3600),
                     endsAt = Instant.now().plusSeconds(3600),
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
                 )
 
             mvc
@@ -199,6 +200,7 @@ class EventIntegrationTest
                     waitlistEnabled = false,
                     startsAt = null,
                     endsAt = Instant.now().minusSeconds(3600),
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
                 )
 
             mvc
@@ -221,6 +223,7 @@ class EventIntegrationTest
                     waitlistEnabled = false,
                     startsAt = Instant.now().plusSeconds(7200),
                     endsAt = Instant.now().plusSeconds(3600), // startsAt 보다 이전
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
                 )
 
             mvc
@@ -242,6 +245,7 @@ class EventIntegrationTest
                     capacity = 10,
                     waitlistEnabled = false,
                     registrationStartsAt = Instant.now().minusSeconds(3600),
+                    registrationEndsAt = Instant.now().plusSeconds(5400),
                 )
 
             mvc
@@ -309,6 +313,7 @@ class EventIntegrationTest
                     startsAt = Instant.now().plusSeconds(3600),
                     endsAt = Instant.now().plusSeconds(7200),
                     registrationStartsAt = Instant.now().plusSeconds(5400),
+                    registrationEndsAt = Instant.now().plusSeconds(7200),
                 )
 
             mvc
