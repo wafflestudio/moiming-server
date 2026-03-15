@@ -76,12 +76,6 @@ enum class EventErrorCode(
         message = "신청 마감 시간이 모임 시작 시간보다\n빨라야 합니다.",
     ),
 
-    CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "Capacity cannot be decreased.",
-        message = "Capacity cannot be reduced below the current confirmed participant count.",
-    ),
-
     // 23xx - Conflict
     EVENT_FULL(
         httpStatusCode = HttpStatus.CONFLICT,
