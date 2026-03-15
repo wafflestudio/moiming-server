@@ -55,6 +55,18 @@ interface RegistrationRepository :
 
     @Query(
         """
+        SELECT * FROM registrations
+        WHERE event_id = :eventId AND status = :status
+        ORDER BY created_at DESC, id DESC
+        """,
+    )
+    fun findByEventIdAndStatusOrderByCreatedAtDescIdDesc(
+        eventId: Long,
+        status: RegistrationStatus,
+    ): List<Registration>
+
+    @Query(
+        """
         SELECT event_id AS eventId, COUNT(*) AS totalCount
         FROM registrations
         WHERE event_id IN (:eventIds) AND status IN (:statuses)
