@@ -11,6 +11,10 @@ import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
 import com.wafflestudio.spring2025.domain.registration.repository.RegistrationRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -1122,7 +1126,7 @@ class EventIntegrationTest
         }
 
         @Test
-        fun `확정된 참가자가 있는 이벤트 삭제 요청 시 409를 반환한다`() {
+        fun `확정된 참가자가 있는 이벤트도 주최자가 삭제 시 204를 반환한다`() {
             val (user, token) = dataGenerator.generateUser()
             val (participant, _) = dataGenerator.generateUser()
             val event = createEventInDb(createdBy = user.id!!)
@@ -1139,7 +1143,60 @@ class EventIntegrationTest
                 .perform(
                     delete("/api/events/${event.publicId}")
                         .header("Authorization", "Bearer $token"),
-                ).andExpect(status().isConflict)
-                .andExpect(jsonPath("$.code").value("EVENT_HAS_CONFIRMED_REGISTRATIONS"))
+                ).andExpect(status().isNoContent)
+        }
+
+        @Test
+        fun `이벤트 삭제 시 CONFIRMED와 WAITLISTED 신청자에게 이메일이 발송되고 BANNED에게는 발송되지 않는다`() {
+            val (host, token) = dataGenerator.generateUser()
+            val (confirmed, _) = dataGenerator.generateUser()
+            val (waitlisted, _) = dataGenerator.generateUser()
+            val (banned, _) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 2)
+
+            registrationRepository.save(Registration(userId = confirmed.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = waitlisted.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED))
+            registrationRepository.save(Registration(userId = banned.id!!, eventId = event.id!!, status = RegistrationStatus.BANNED))
+
+            mvc
+                .perform(
+                    delete("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token"),
+                ).andExpect(status().isNoContent)
+
+            verify(emailService, times(2)).sendEventCancellationEmail(any())
+        }
+
+        @Test
+        fun `이벤트 삭제 시 관련 registration도 모두 삭제된다`() {
+            val (host, token) = dataGenerator.generateUser()
+            val (p1, _) = dataGenerator.generateUser()
+            val (p2, _) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = host.id!!, capacity = 1)
+
+            registrationRepository.save(Registration(userId = p1.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
+            registrationRepository.save(Registration(userId = p2.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED))
+
+            mvc
+                .perform(
+                    delete("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token"),
+                ).andExpect(status().isNoContent)
+
+            assertThat(registrationRepository.findByEventId(event.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `신청자가 없는 이벤트 삭제 시 이메일이 발송되지 않는다`() {
+            val (user, token) = dataGenerator.generateUser()
+            val event = createEventInDb(createdBy = user.id!!)
+
+            mvc
+                .perform(
+                    delete("/api/events/${event.publicId}")
+                        .header("Authorization", "Bearer $token"),
+                ).andExpect(status().isNoContent)
+
+            verify(emailService, never()).sendEventCancellationEmail(any())
         }
     }
