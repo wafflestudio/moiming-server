@@ -1155,7 +1155,9 @@ class EventIntegrationTest
             val event = createEventInDb(createdBy = host.id!!, capacity = 2)
 
             registrationRepository.save(Registration(userId = confirmed.id!!, eventId = event.id!!, status = RegistrationStatus.CONFIRMED))
-            registrationRepository.save(Registration(userId = waitlisted.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED))
+            registrationRepository.save(
+                Registration(userId = waitlisted.id!!, eventId = event.id!!, status = RegistrationStatus.WAITLISTED),
+            )
             registrationRepository.save(Registration(userId = banned.id!!, eventId = event.id!!, status = RegistrationStatus.BANNED))
 
             mvc
