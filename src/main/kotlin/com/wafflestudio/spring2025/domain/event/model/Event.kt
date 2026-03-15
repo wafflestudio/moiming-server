@@ -26,7 +26,7 @@ class Event(
     @Column("registration_starts_at")
     var registrationStartsAt: Instant? = null,
     @Column("registration_ends_at")
-    var registrationEndsAt: Instant? = null,
+    var registrationEndsAt: Instant,
     @Column("created_by")
     var createdBy: Long,
     @CreatedDate
