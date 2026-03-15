@@ -26,7 +26,7 @@ data class CreateEventRequest(
     @Schema(description = "대기 명단 사용 여부", example = "true")
     val waitlistEnabled: Boolean,
     @Schema(
-        description = "신청 시작 시간 (ISO-8601)",
+        description = "신청 시작 시간 (ISO-8601). null인 경우 요청 시점으로 자동 설정됩니다.",
         example = "2026-02-02T17:00:00Z",
     )
     val registrationStartsAt: Instant? = null,
