@@ -12,6 +12,8 @@ interface RegistrationRepository :
     PagingAndSortingRepository<Registration, Long> {
     fun findByEventId(eventId: Long): List<Registration>
 
+    fun deleteByEventId(eventId: Long)
+
     fun findByRegistrationPublicId(registrationPublicId: String): Registration?
 
     @Query(
