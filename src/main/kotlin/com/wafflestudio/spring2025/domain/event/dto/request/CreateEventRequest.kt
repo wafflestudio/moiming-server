@@ -34,5 +34,5 @@ data class CreateEventRequest(
         description = "신청 마감 시간 (ISO-8601)",
         example = "2026-02-02T17:30:00Z",
     )
-    val registrationEndsAt: Instant? = null,
+    val registrationEndsAt: Instant,
 )
