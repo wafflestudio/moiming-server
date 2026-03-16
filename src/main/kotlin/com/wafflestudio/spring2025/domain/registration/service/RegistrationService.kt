@@ -71,7 +71,7 @@ RegistrationService(
         val capacity = lockedEvent.capacity ?: throw IllegalStateException("이벤트의 capacity가 설정되어 있지 않습니다.")
         val currentConfirmed =
             registrationRepository
-                .countByEventIdAndStatusWithLock(eventPk, RegistrationStatus.CONFIRMED)
+                .countByEventIdAndStatus(eventPk, RegistrationStatus.CONFIRMED)
                 .toInt()
 
         val status =
@@ -232,20 +232,12 @@ RegistrationService(
         guestEmail: String?,
         registrationPublicId: String,
     ) {
-        // eventId를 얻기 위한 미리보기 조회 (락 없음)
-        val preview =
+        val registration =
             registrationRepository.findByRegistrationPublicId(registrationPublicId)
                 ?: throw RegistrationNotFoundException()
 
-        // create()와 동일한 락 순서(event → registration)로 통일해 데드락 방지
-        eventLockRepository.lockById(preview.eventId)
         val event =
-            eventRepository.findById(preview.eventId).orElseThrow { EventNotFoundException() }
-
-        // event 락 획득 후 registration 행 락
-        val registration =
-            registrationRepository.lockByRegistrationPublicId(registrationPublicId)
-                ?: throw RegistrationNotFoundException()
+            eventRepository.findById(registration.eventId).orElseThrow { EventNotFoundException() }
 
         if (userId != null) {
             if (registration.userId != userId) {
@@ -680,7 +672,7 @@ RegistrationService(
 
         val capacity = event.capacity ?: throw IllegalStateException("이벤트의 capacity가 설정되어 있지 않습니다.")
         val confirmed =
-            registrationRepository.countByEventIdAndStatusWithLock(eventId, RegistrationStatus.CONFIRMED).toInt()
+            registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED).toInt()
         val available = capacity - confirmed
         if (available <= 0) return
 
