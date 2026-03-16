@@ -232,12 +232,20 @@ RegistrationService(
         guestEmail: String?,
         registrationPublicId: String,
     ) {
-        val registration =
+        // eventId lookup without lock
+        val preview =
             registrationRepository.findByRegistrationPublicId(registrationPublicId)
                 ?: throw RegistrationNotFoundException()
 
+        // Lock event first to keep lock ordering consistent and avoid deadlocks.
+        eventLockRepository.lockById(preview.eventId)
         val event =
-            eventRepository.findById(registration.eventId).orElseThrow { EventNotFoundException() }
+            eventRepository.findById(preview.eventId).orElseThrow { EventNotFoundException() }
+
+        // Lock registration row after event lock.
+        val registration =
+            registrationRepository.lockByRegistrationPublicId(registrationPublicId)
+                ?: throw RegistrationNotFoundException()
 
         if (userId != null) {
             if (registration.userId != userId) {
