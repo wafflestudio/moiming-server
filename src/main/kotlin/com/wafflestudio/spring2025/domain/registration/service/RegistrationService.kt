@@ -232,12 +232,20 @@ RegistrationService(
         guestEmail: String?,
         registrationPublicId: String,
     ) {
-        val registration =
+        // eventId를 얻기 위한 미리보기 조회 (락 없음)
+        val preview =
             registrationRepository.findByRegistrationPublicId(registrationPublicId)
                 ?: throw RegistrationNotFoundException()
 
+        // create()와 동일한 락 순서(event → registration)로 통일해 데드락 방지
+        eventLockRepository.lockById(preview.eventId)
         val event =
-            eventRepository.findById(registration.eventId).orElseThrow { EventNotFoundException() }
+            eventRepository.findById(preview.eventId).orElseThrow { EventNotFoundException() }
+
+        // event 락 획득 후 registration 행 락
+        val registration =
+            registrationRepository.lockByRegistrationPublicId(registrationPublicId)
+                ?: throw RegistrationNotFoundException()
 
         if (userId != null) {
             if (registration.userId != userId) {

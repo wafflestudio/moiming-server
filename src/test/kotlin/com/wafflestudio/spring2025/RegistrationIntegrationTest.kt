@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -374,17 +375,21 @@ class RegistrationIntegrationTest
             val executor = Executors.newFixedThreadPool(totalUsers)
             val startLatch = CountDownLatch(1)
             val doneLatch = CountDownLatch(totalUsers)
+            val statusCodes = CopyOnWriteArrayList<Int>()
 
             tokens.forEach { token ->
                 executor.submit {
                     try {
                         startLatch.await()
-                        mvc.perform(
-                            post("/api/events/${event.publicId}/registrations")
-                                .header("Authorization", "Bearer $token")
-                                .content(mapper.writeValueAsString(CreateRegistrationRequest()))
-                                .contentType(MediaType.APPLICATION_JSON),
-                        )
+                        val result =
+                            mvc
+                                .perform(
+                                    post("/api/events/${event.publicId}/registrations")
+                                        .header("Authorization", "Bearer $token")
+                                        .content(mapper.writeValueAsString(CreateRegistrationRequest()))
+                                        .contentType(MediaType.APPLICATION_JSON),
+                                ).andReturn()
+                        statusCodes.add(result.response.status)
                     } finally {
                         doneLatch.countDown()
                     }
@@ -392,8 +397,11 @@ class RegistrationIntegrationTest
             }
 
             startLatch.countDown()
-            doneLatch.await(10, TimeUnit.SECONDS)
+            val completed = doneLatch.await(10, TimeUnit.SECONDS)
             executor.shutdown()
+
+            assertTrue(completed, "모든 요청이 타임아웃(10초) 내에 완료되어야 합니다")
+            assertTrue(statusCodes.all { it == 200 }, "모든 요청이 HTTP 200으로 성공해야 합니다: $statusCodes")
 
             val confirmed = registrationRepository.countByEventIdAndStatus(event.id!!, RegistrationStatus.CONFIRMED)
             val waitlisted = registrationRepository.countByEventIdAndStatus(event.id!!, RegistrationStatus.WAITLISTED)
