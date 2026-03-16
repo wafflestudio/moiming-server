@@ -372,10 +372,9 @@ class EventService(
         publicId: String,
         requesterId: Long,
     ) {
-        val event = getEventByPublicId(publicId)
+        val eventId = eventLockRepository.lockIdByPublicId(publicId) ?: throw EventNotFoundException()
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
         requireCreator(event, requesterId)
-        val eventId = requireNotNull(event.id)
-        if (!eventLockRepository.lockById(eventId)) throw EventNotFoundException()
 
         // 알림 대상: CONFIRMED + WAITLISTED (BANNED 제외)
         val registrationsToNotify =
