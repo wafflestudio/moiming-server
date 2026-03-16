@@ -12,7 +12,7 @@ data class UpdateEventResponse(
     val capacity: Int?,
     val waitlistEnabled: Boolean,
     val registrationStartsAt: Instant?,
-    val registrationEndsAt: Instant?,
+    val registrationEndsAt: Instant,
 ) {
     companion object {
         fun from(event: Event): UpdateEventResponse =

@@ -37,8 +37,8 @@ data class EventInfo(
     val totalApplicants: Int,
     @Schema(description = "신청 시작 시간 (ISO-8601)", example = "2026-02-02T17:00:00Z", nullable = true)
     val registrationStartsAt: Instant?,
-    @Schema(description = "신청 마감 시간 (ISO-8601)", example = "2026-02-02T17:00:00Z", nullable = true)
-    val registrationEndsAt: Instant?,
+    @Schema(description = "신청 마감 시간 (ISO-8601)", example = "2026-02-02T17:00:00Z")
+    val registrationEndsAt: Instant,
 )
 
 @Schema(description = "생성자 정보 블록")
