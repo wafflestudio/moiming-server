@@ -48,16 +48,6 @@ enum class EventErrorCode(
     ),
 
     // 모임 시간 검증
-    EVENT_STARTS_IN_PAST(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모임 시작 시간이 유효하지 않습니다.",
-        message = "모임 시작 시간은\n현재 시간 이후여야 합니다.",
-    ),
-    EVENT_ENDS_IN_PAST(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "모임 종료 시간이 유효하지 않습니다.",
-        message = "모임 종료 시간은\n현재 시간 이후여야 합니다.",
-    ),
     EVENT_TIME_RANGE_INVALID(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "모임 시간이 유효하지 않습니다.",
@@ -65,11 +55,6 @@ enum class EventErrorCode(
     ),
 
     // 신청 기간 검증
-    REGISTRATION_STARTS_IN_PAST(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "신청 시작 시간이 유효하지 않습니다.",
-        message = "신청 시작 시간은\n현재 시간 이후여야 합니다.",
-    ),
     REGISTRATION_ENDS_IN_PAST(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "신청 마감 시간이 유효하지 않습니다.",
@@ -90,17 +75,12 @@ enum class EventErrorCode(
         title = "신청 기간이 유효하지 않습니다.",
         message = "신청 마감 시간이 모임 시작 시간보다\n빨라야 합니다.",
     ),
+    REGISTRATION_ENDS_AFTER_EVENT_END(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "신청 기간이 유효하지 않습니다.",
+        message = "신청 마감 시간이 모임 종료 시간보다\n빨라야 합니다.",
+    ),
 
-    REGISTRATION_START_CANNOT_DELAY_WITH_PARTICIPANTS(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "Registration start cannot be delayed.",
-        message = "When participants exist, registration start cannot be moved later than the current value.",
-    ),
-    REGISTRATION_END_CANNOT_ADVANCE_WITH_PARTICIPANTS(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "Registration end cannot be advanced.",
-        message = "When participants exist, registration end cannot be moved earlier than the current value.",
-    ),
     CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS(
         httpStatusCode = HttpStatus.BAD_REQUEST,
         title = "Capacity cannot be decreased.",

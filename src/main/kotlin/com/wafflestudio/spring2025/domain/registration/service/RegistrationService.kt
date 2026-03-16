@@ -612,14 +612,9 @@ RegistrationService(
     }
 
     private fun isRegistrationEnabled(event: Event): Boolean {
-        val registrationStartsAt = event.registrationStartsAt
-        val registrationEndsAt = event.registrationEndsAt
         val now = Instant.now()
-
-        // null 정책: 시작/끝이 null이면 제한 없는 것으로 취급
-        val afterStart = registrationStartsAt?.let { !now.isBefore(it) } ?: true
-        val beforeEnd = registrationEndsAt?.let { !now.isAfter(it) } ?: true
-
+        val afterStart = event.registrationStartsAt?.let { !now.isBefore(it) } ?: true
+        val beforeEnd = !now.isAfter(event.registrationEndsAt)
         return afterStart && beforeEnd
     }
 

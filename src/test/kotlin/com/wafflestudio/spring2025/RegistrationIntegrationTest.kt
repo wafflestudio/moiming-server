@@ -473,7 +473,7 @@ class RegistrationIntegrationTest
             capacity: Int = 10,
             waitlistEnabled: Boolean = false,
             registrationStartsAt: Instant? = null,
-            registrationEndsAt: Instant? = null,
+            registrationEndsAt: Instant = Instant.now().plusSeconds(5400),
         ): Event =
             eventRepository.save(
                 Event(

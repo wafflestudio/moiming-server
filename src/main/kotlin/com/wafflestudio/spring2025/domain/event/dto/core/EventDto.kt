@@ -24,7 +24,7 @@ data class EventDto(
     @Schema(description = "신청 시작 시간 (epoch milliseconds)")
     val registrationStartsAt: Long?,
     @Schema(description = "신청 마감 시간 (epoch milliseconds)")
-    val registrationEndsAt: Long?,
+    val registrationEndsAt: Long,
     @Schema(description = "작성자 ID")
     val createdBy: Long,
     @Schema(description = "생성 일시 (epoch milliseconds)")
@@ -42,7 +42,7 @@ data class EventDto(
         capacity = event.capacity,
         waitlistEnabled = event.waitlistEnabled,
         registrationStartsAt = event.registrationStartsAt?.toEpochMilli(),
-        registrationEndsAt = event.registrationEndsAt?.toEpochMilli(),
+        registrationEndsAt = event.registrationEndsAt.toEpochMilli(),
         createdBy = event.createdBy,
         createdAt = event.createdAt?.toEpochMilli(),
         updatedAt = event.updatedAt?.toEpochMilli(),
