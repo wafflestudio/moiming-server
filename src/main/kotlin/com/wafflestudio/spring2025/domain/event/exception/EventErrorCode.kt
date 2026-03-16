@@ -75,6 +75,11 @@ enum class EventErrorCode(
         title = "신청 기간이 유효하지 않습니다.",
         message = "신청 마감 시간이 모임 시작 시간보다\n빨라야 합니다.",
     ),
+    REGISTRATION_ENDS_AFTER_EVENT_END(
+        httpStatusCode = HttpStatus.BAD_REQUEST,
+        title = "신청 기간이 유효하지 않습니다.",
+        message = "신청 마감 시간이 모임 종료 시간보다\n빨라야 합니다.",
+    ),
 
     CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS(
         httpStatusCode = HttpStatus.BAD_REQUEST,
