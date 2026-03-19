@@ -252,6 +252,8 @@ RegistrationService(
             }
         }
 
+        eventLockRepository.lockById(registration.eventId)
+
         val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
         registrationRepository.deleteById(requireNotNull(registration.id))
 
