@@ -475,7 +475,7 @@ class EventService(
         }
         // 모집 마감 ≤ 일정 끝 (행사시작 없을 때도 직접 체크)
         if (endsAt != null && registrationEndsAt.isAfter(endsAt)) {
-            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_START)
+            throw EventValidationException(EventErrorCode.REGISTRATION_ENDS_AFTER_EVENT_END)
         }
     }
 
