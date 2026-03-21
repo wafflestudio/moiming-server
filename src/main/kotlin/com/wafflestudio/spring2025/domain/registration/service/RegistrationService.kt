@@ -71,7 +71,7 @@ RegistrationService(
         val capacity = lockedEvent.capacity ?: throw IllegalStateException("이벤트의 capacity가 설정되어 있지 않습니다.")
         val currentConfirmed =
             registrationRepository
-                .countByEventIdAndStatus(eventPk, RegistrationStatus.CONFIRMED)
+                .countByEventIdAndStatusWithLock(eventPk, RegistrationStatus.CONFIRMED)
                 .toInt()
 
         val status =
@@ -743,7 +743,7 @@ RegistrationService(
 
         val capacity = event.capacity ?: throw IllegalStateException("이벤트의 capacity가 설정되어 있지 않습니다.")
         val confirmed =
-            registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED).toInt()
+            registrationRepository.countByEventIdAndStatusWithLock(eventId, RegistrationStatus.CONFIRMED).toInt()
         val available = capacity - confirmed
         if (available <= 0) return
 

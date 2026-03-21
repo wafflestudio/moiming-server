@@ -48,6 +48,19 @@ interface RegistrationRepository :
         registrationStatus: RegistrationStatus,
     ): Long
 
+    @Query(
+        """
+        SELECT COUNT(*)
+        FROM registrations
+        WHERE event_id = :eventId AND status = :status
+        FOR SHARE
+        """,
+    )
+    fun countByEventIdAndStatusWithLock(
+        eventId: Long,
+        status: RegistrationStatus,
+    ): Long
+
     fun findByEventIdAndStatusOrderByCreatedAtAsc(
         eventID: Long,
         registrationStatus: RegistrationStatus,
