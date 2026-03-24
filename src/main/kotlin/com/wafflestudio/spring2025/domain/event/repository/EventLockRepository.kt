@@ -7,11 +7,21 @@ import org.springframework.stereotype.Repository
 class EventLockRepository(
     private val jdbcTemplate: JdbcTemplate,
 ) {
-    fun lockById(eventId: Long) {
-        jdbcTemplate.queryForObject(
-            "SELECT id FROM events WHERE id = ? FOR UPDATE",
-            Long::class.java,
-            eventId,
-        )
+    fun lockIdByPublicId(publicId: String): Long? =
+        jdbcTemplate
+            .query(
+                "SELECT id FROM events WHERE public_id = ? FOR UPDATE",
+                { rs, _ -> rs.getLong("id") },
+                publicId,
+            ).firstOrNull()
+
+    fun lockById(eventId: Long): Boolean {
+        val result =
+            jdbcTemplate.query(
+                "SELECT id FROM events WHERE id = ? FOR UPDATE",
+                { rs, _ -> rs.getLong("id") },
+                eventId,
+            )
+        return result.isNotEmpty()
     }
 }

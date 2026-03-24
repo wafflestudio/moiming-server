@@ -237,12 +237,12 @@ RegistrationService(
             registrationRepository.findByRegistrationPublicId(registrationPublicId)
                 ?: throw RegistrationNotFoundException()
 
-        // create()와 동일한 락 순서(event → registration)로 통일해 데드락 방지
+        // 이벤트 업데이트와 경합 시 취소 가능 시점 판정을 일관되게 하기 위해 선락
         eventLockRepository.lockById(preview.eventId)
         val event =
             eventRepository.findById(preview.eventId).orElseThrow { EventNotFoundException() }
 
-        // event 락 획득 후 registration 행 락
+        // 이벤트 락 획득 후 registration 행 락
         val registration =
             registrationRepository.lockByRegistrationPublicId(registrationPublicId)
                 ?: throw RegistrationNotFoundException()
@@ -258,6 +258,12 @@ RegistrationService(
             ) {
                 throw RegistrationForbiddenException(RegistrationErrorCode.REGISTRATION_DELETE_UNAUTHORIZED)
             }
+        }
+
+        eventLockRepository.lockById(registration.eventId)
+
+        if (!isRegistrationEnabled(event)) {
+            throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
         }
 
         val wasConfirmed = registration.status == RegistrationStatus.CONFIRMED
@@ -381,10 +387,6 @@ RegistrationService(
         val registration =
             registrationRepository.lockByRegistrationPublicId(registrationId)
                 ?: throw RegistrationNotFoundException()
-
-        if (!isRegistrationEnabled(event)) {
-            throw RegistrationValidationException(RegistrationErrorCode.NOT_WITHIN_REGISTRATION_WINDOW)
-        }
 
         val isHost = userId != null && userId == event.createdBy
 //        val isRegistrant = userId != null && registration.userId == userId
@@ -668,6 +670,67 @@ RegistrationService(
 
         afterCommit {
             emailService.sendRegistrationStatusEmail(emailData)
+        }
+    }
+
+    @Transactional
+    override fun demoteToWaitlist(
+        eventId: Long,
+        newCapacity: Int,
+    ) {
+        eventLockRepository.lockById(eventId)
+
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
+
+        val confirmedRegs =
+            registrationRepository.findByEventIdAndStatusOrderByCreatedAtDescIdDesc(
+                eventId,
+                RegistrationStatus.CONFIRMED,
+            )
+
+        val excessCount = confirmedRegs.size - newCapacity
+        if (excessCount <= 0) return
+
+        val toDemote = confirmedRegs.take(excessCount)
+        toDemote.forEach { it.status = RegistrationStatus.WAITLISTED }
+        registrationRepository.saveAll(toDemote)
+
+        val demotedPublicIds = toDemote.map { it.registrationPublicId }
+        val waitlistPositions =
+            registrationRepository
+                .findWaitlistPositionsByRegistrationPublicIds(
+                    eventId = eventId,
+                    status = RegistrationStatus.WAITLISTED,
+                    registrationPublicIds = demotedPublicIds,
+                ).associate { it.registrationPublicId to it.waitlistNumber.toInt() }
+
+        val userIds = toDemote.mapNotNull { it.userId }.distinct()
+        val usersById = userRepository.findAllById(userIds).associateBy { it.id!! }
+
+        val emailDataList =
+            toDemote.mapNotNull { reg ->
+                val user = reg.userId?.let { usersById[it] }
+                val toEmail = user?.email ?: reg.guestEmail
+                if (toEmail.isNullOrBlank()) return@mapNotNull null
+                EmailService.DemotionEmailData(
+                    toEmail = toEmail,
+                    name = user?.name ?: reg.guestName ?: "참여자",
+                    eventTitle = event.title,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    newCapacity = newCapacity,
+                    registrationStartsAt = event.registrationStartsAt,
+                    registrationEndsAt = event.registrationEndsAt,
+                    description = event.description,
+                    publicId = event.publicId,
+                    registrationPublicId = reg.registrationPublicId,
+                    waitingNum = waitlistPositions[reg.registrationPublicId],
+                )
+            }
+
+        afterCommit {
+            emailDataList.forEach { emailService.sendDemotionEmail(it) }
         }
     }
 

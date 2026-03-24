@@ -81,21 +81,10 @@ enum class EventErrorCode(
         message = "신청 마감 시간이 모임 종료 시간보다\n빨라야 합니다.",
     ),
 
-    CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS(
-        httpStatusCode = HttpStatus.BAD_REQUEST,
-        title = "Capacity cannot be decreased.",
-        message = "Capacity cannot be reduced below the current confirmed participant count.",
-    ),
-
     // 23xx - Conflict
     EVENT_FULL(
         httpStatusCode = HttpStatus.CONFLICT,
         title = "정원이 초과되었습니다.",
         message = "모임 정원이 가득 차\n더 이상 신청할 수 없습니다.",
-    ),
-    EVENT_HAS_CONFIRMED_REGISTRATIONS(
-        httpStatusCode = HttpStatus.CONFLICT,
-        title = "확정된 참가자가 있습니다.",
-        message = "확정된 참가자가 있는 모임은 삭제할 수 없습니다.",
     ),
 }

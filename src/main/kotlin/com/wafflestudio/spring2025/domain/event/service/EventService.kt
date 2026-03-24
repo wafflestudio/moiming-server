@@ -1,5 +1,6 @@
 package com.wafflestudio.spring2025.domain.event.service
 
+import com.wafflestudio.spring2025.common.email.service.EmailService
 import com.wafflestudio.spring2025.common.image.service.ImageService
 import com.wafflestudio.spring2025.domain.event.dto.response.CapabilitiesInfo
 import com.wafflestudio.spring2025.domain.event.dto.response.CreatorInfo
@@ -12,7 +13,6 @@ import com.wafflestudio.spring2025.domain.event.dto.response.ViewerInfo
 import com.wafflestudio.spring2025.domain.event.dto.response.ViewerStatus
 import com.wafflestudio.spring2025.domain.event.exception.EventErrorCode
 import com.wafflestudio.spring2025.domain.event.exception.EventForbiddenException
-import com.wafflestudio.spring2025.domain.event.exception.EventHasConfirmedRegistrationsException
 import com.wafflestudio.spring2025.domain.event.exception.EventNotFoundException
 import com.wafflestudio.spring2025.domain.event.exception.EventValidationException
 import com.wafflestudio.spring2025.domain.event.model.Event
@@ -26,6 +26,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.Instant
 import java.util.UUID
 
@@ -37,6 +39,7 @@ class EventService(
     private val waitlistReconciliationService: WaitlistReconciliationService,
     private val userRepository: UserRepository,
     private val imageService: ImageService,
+    private val emailService: EmailService,
 ) {
     /**
      * 일정 생성
@@ -319,17 +322,12 @@ class EventService(
         registrationEndsAt: Instant?,
         requesterId: Long,
     ): Event {
-        val event = getEventByPublicId(publicId)
-        requireCreator(event, requesterId)
-        val eventId = requireNotNull(event.id) { "Event id is null: publicId=$publicId" }
-        eventLockRepository.lockById(eventId)
+        val eventForAuth = getEventByPublicId(publicId)
+        requireCreator(eventForAuth, requesterId)
+        val eventId = requireNotNull(eventForAuth.id) { "Event id is null: publicId=$publicId" }
+        if (!eventLockRepository.lockById(eventId)) throw EventNotFoundException()
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
         val previousCapacity = event.capacity
-
-        val confirmedParticipants = countConfirmedParticipants(eventId)
-        validateCapacityUpdate(
-            capacity = capacity,
-            confirmedParticipants = confirmedParticipants,
-        )
 
         val mergedTitle = title?.trim() ?: event.title
         val mergedCapacity = capacity ?: event.capacity
@@ -361,26 +359,57 @@ class EventService(
         if (isCapacityIncreased(previousCapacity, savedEvent.capacity)) {
             waitlistReconciliationService.reconcileWaitlist(eventId)
         }
+        if (isCapacityDecreased(previousCapacity, savedEvent.capacity)) {
+            waitlistReconciliationService.demoteToWaitlist(eventId, savedEvent.capacity!!)
+        }
         return savedEvent
     }
 
+    @Transactional
     fun delete(
         publicId: String,
         requesterId: Long,
     ) {
-        val event = getEventByPublicId(publicId)
+        val eventId = eventLockRepository.lockIdByPublicId(publicId) ?: throw EventNotFoundException()
+        val event = eventRepository.findById(eventId).orElseThrow { EventNotFoundException() }
         requireCreator(event, requesterId)
-        val confirmedNumber =
-            registrationRepository
-                .countByEventIdAndStatus(
-                    eventID = requireNotNull(event.id),
-                    registrationStatus = RegistrationStatus.CONFIRMED,
-                ).toInt()
 
-        if (confirmedNumber > 0) {
-            throw EventHasConfirmedRegistrationsException()
-        } else {
-            eventRepository.deleteById(requireNotNull(event.id))
+        // 알림 대상: CONFIRMED + WAITLISTED (BANNED 제외)
+        val registrationsToNotify =
+            registrationRepository
+                .findByEventId(eventId)
+                .filter { it.status == RegistrationStatus.CONFIRMED || it.status == RegistrationStatus.WAITLISTED }
+
+        // 이메일 데이터 구성 (삭제 전에 user 정보 조회)
+        val hostUser = userRepository.findById(event.createdBy).orElse(null)
+        val userIds = registrationsToNotify.mapNotNull { it.userId }.distinct()
+        val usersById = userRepository.findAllById(userIds).associateBy { it.id!! }
+
+        val emailDataList =
+            registrationsToNotify.mapNotNull { reg ->
+                val user = reg.userId?.let { usersById[it] }
+                val toEmail = user?.email ?: reg.guestEmail
+                if (toEmail.isNullOrBlank()) return@mapNotNull null
+                EmailService.EventCancellationEmailData(
+                    toEmail = toEmail,
+                    name = user?.name ?: reg.guestName ?: "참여자",
+                    eventTitle = event.title,
+                    startsAt = event.startsAt,
+                    endsAt = event.endsAt,
+                    location = event.location,
+                    description = event.description,
+                    hostEmail = hostUser?.email ?: "",
+                )
+            }
+
+        // FK 제약으로 인해 event 삭제 전 registrations 먼저 삭제
+        registrationRepository.deleteByEventId(eventId)
+        eventRepository.deleteById(eventId)
+
+        afterCommit {
+            emailDataList.forEach { data ->
+                emailService.sendEventCancellationEmail(data)
+            }
         }
     }
 
@@ -450,26 +479,29 @@ class EventService(
         }
     }
 
-    private fun countConfirmedParticipants(eventId: Long): Int =
-        registrationRepository
-            .countByEventIdAndStatus(eventID = eventId, registrationStatus = RegistrationStatus.CONFIRMED)
-            .toInt()
-
-    private fun validateCapacityUpdate(
-        capacity: Int?,
-        confirmedParticipants: Int,
-    ) {
-        if (confirmedParticipants <= 0) return
-
-        if (capacity != null && capacity < confirmedParticipants) {
-            throw EventValidationException(EventErrorCode.CAPACITY_CANNOT_DECREASE_WITH_PARTICIPANTS)
-        }
-    }
-
     private fun isCapacityIncreased(
         previousCapacity: Int?,
         newCapacity: Int?,
     ): Boolean = previousCapacity != null && newCapacity != null && newCapacity > previousCapacity
+
+    private fun isCapacityDecreased(
+        previousCapacity: Int?,
+        newCapacity: Int?,
+    ): Boolean = previousCapacity != null && newCapacity != null && newCapacity < previousCapacity
+
+    private fun afterCommit(action: () -> Unit) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            action()
+            return
+        }
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() {
+                    action()
+                }
+            },
+        )
+    }
 
     private fun buildCapabilities(
         viewerStatus: ViewerStatus,

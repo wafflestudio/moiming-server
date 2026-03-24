@@ -118,6 +118,33 @@ class EmailService(
         val description: String?,
     )
 
+    data class EventCancellationEmailData(
+        val toEmail: String,
+        val name: String,
+        val eventTitle: String?,
+        val startsAt: Instant?,
+        val endsAt: Instant?,
+        val location: String?,
+        val description: String?,
+        val hostEmail: String,
+    )
+
+    data class DemotionEmailData(
+        val toEmail: String,
+        val name: String,
+        val eventTitle: String?,
+        val startsAt: Instant?,
+        val endsAt: Instant?,
+        val location: String?,
+        val newCapacity: Int,
+        val registrationStartsAt: Instant?,
+        val registrationEndsAt: Instant,
+        val description: String?,
+        val publicId: String,
+        val registrationPublicId: String,
+        val waitingNum: Int?,
+    )
+
     fun sendRegistrationStatusEmail(data: RegistrationStatusEmailData) {
         when (data.status) {
             RegistrationStatus.CONFIRMED -> {
@@ -138,7 +165,7 @@ class EmailService(
 
                 sendHtmlEmail(
                     to = data.toEmail,
-                    subject = emailName("참여 신청 확정", data.eventTitle),
+                    subject = emailName("참여 확정", data.eventTitle),
                     htmlContent = htmlContent,
                 )
 
@@ -164,7 +191,7 @@ class EmailService(
 
                 sendHtmlEmail(
                     to = data.toEmail,
-                    subject = emailName("참여 신청 대기", data.eventTitle),
+                    subject = emailName("대기 등록", data.eventTitle),
                     htmlContent = htmlContent,
                 )
 
@@ -186,7 +213,7 @@ class EmailService(
 
                 sendHtmlEmail(
                     to = data.toEmail,
-                    subject = emailName("참여 신청 강제 취소", data.eventTitle),
+                    subject = emailName("강제 취소", data.eventTitle),
                     htmlContent = htmlContent,
                 )
 
@@ -219,6 +246,50 @@ class EmailService(
         )
 
         logger.info("신청 삭제 정보가 ${data.toEmail} 로 전달되었습니다.")
+    }
+
+    fun sendEventCancellationEmail(data: EventCancellationEmailData) {
+        val htmlContent =
+            loadTemplate("event-cancelled.html")
+                .replace("{name}", data.name)
+                .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                .replace("{location}", formatLocation(data.location))
+                .replace("{hostEmail}", data.hostEmail)
+                .replace("{description}", formatDescription(data.description))
+
+        sendHtmlEmail(
+            to = data.toEmail,
+            subject = emailName("일정 취소", data.eventTitle),
+            htmlContent = htmlContent,
+        )
+
+        logger.info("일정 취소 정보가 ${data.toEmail} 로 전달되었습니다.")
+    }
+
+    fun sendDemotionEmail(data: DemotionEmailData) {
+        val htmlContent =
+            loadTemplate("registration-demoted.html")
+                .replace("{name}", data.name)
+                .replace("{waitingNum}", data.waitingNum?.toString() ?: "-")
+                .replace("{newCapacity}", data.newCapacity.toString())
+                .replace("{eventTitle}", formatEventTitle(data.eventTitle))
+                .replace("{eventDateRange}", formatEventDateRange(data.startsAt, data.endsAt, "-"))
+                .replace("{location}", formatLocation(data.location))
+                .replace(
+                    "{registrationDateRange}",
+                    formatRegistrationDateRange(data.registrationStartsAt, data.registrationEndsAt),
+                ).replace("{description}", formatDescription(data.description))
+                .replace("{publicId}", data.publicId)
+                .replace("{registrationPublicId}", data.registrationPublicId)
+
+        sendHtmlEmail(
+            to = data.toEmail,
+            subject = emailName("대기자로 전환", data.eventTitle),
+            htmlContent = htmlContent,
+        )
+
+        logger.info("정원 축소 대기 변경 알림이 ${data.toEmail} 로 전달되었습니다.")
     }
 
     fun sendWaitlistPromotionEmail(
@@ -255,7 +326,7 @@ class EmailService(
 
         sendHtmlEmail(
             to = toEmail,
-            subject = emailName("참여 신청 대기 후 확정", eventTitle),
+            subject = emailName("참여 확정", eventTitle),
             htmlContent = htmlContent,
         )
 

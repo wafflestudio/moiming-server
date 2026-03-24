@@ -12,6 +12,8 @@ interface RegistrationRepository :
     PagingAndSortingRepository<Registration, Long> {
     fun findByEventId(eventId: Long): List<Registration>
 
+    fun deleteByEventId(eventId: Long)
+
     fun findByRegistrationPublicId(registrationPublicId: String): Registration?
 
     @Query(
@@ -62,6 +64,18 @@ interface RegistrationRepository :
     fun findByEventIdAndStatusOrderByCreatedAtAsc(
         eventID: Long,
         registrationStatus: RegistrationStatus,
+    ): List<Registration>
+
+    @Query(
+        """
+        SELECT * FROM registrations
+        WHERE event_id = :eventId AND status = :status
+        ORDER BY created_at DESC, id DESC
+        """,
+    )
+    fun findByEventIdAndStatusOrderByCreatedAtDescIdDesc(
+        eventId: Long,
+        status: RegistrationStatus,
     ): List<Registration>
 
     @Query(
