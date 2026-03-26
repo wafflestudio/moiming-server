@@ -1,0 +1,14 @@
+name: Deploy-api-dev
+
+on:
+    push:
+        branches: [develop] # 원하는 브랜치로 설정
+
+jobs:
+    deploy:
+        uses: ./.github/workflows/_deploy.yml
+        with:
+            ocir_repository: moiming-dev/moiming-server # ocir 레포에 맞게 설정
+            dockerfile: Dockerfile #dockerfile 경로 설정
+        secrets:
+            OCI_AUTH_TOKEN: ${{ secrets.OCI_AUTH_TOKEN }} # 와플 deployer 계정 토큰 필요

@@ -93,3 +93,23 @@ aws:
 
 server:
   forward-headers-strategy: framework
+
+---
+spring:
+  config:
+    activate:
+      on-profile: devx
+oci:
+  vault:
+    secret-ids: ocid1.vaultsecret.oc1.ap-chuncheon-1.amaaaaaat2m5lbqaa3m45icdqcka43cvyzb4kb3ktuatfobwusnsdd4bvzkq
+    region: ap-chuncheon-1
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prodx
+oci:
+  vault:
+    secret-ids: ocid1.vaultsecret.oc1.ap-chuncheon-1.amaaaaaat2m5lbqameflpkt7abivvrauqwheybzrkqipf7msv3ol6ikhd3aq
+    region: ap-chuncheon-1
