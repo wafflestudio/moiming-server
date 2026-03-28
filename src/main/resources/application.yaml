@@ -34,7 +34,7 @@ spring:
     enabled: true
   data:
     redis:
-      host: localhost
+      host: localhost # valkey 변경 필요
       port: 6379
 
 jwt:
