@@ -1,16 +1,10 @@
 package com.wafflestudio.spring2025.common.email.service
 
-import com.wafflestudio.spring2025.common.email.exception.EmailErrorCode
-import com.wafflestudio.spring2025.common.email.exception.EmailServiceUnavailableException
+import com.wafflestudio.spring2025.common.email.client.EmailClient
 import com.wafflestudio.spring2025.config.EmailConfig
 import com.wafflestudio.spring2025.domain.registration.model.RegistrationStatus
-import jakarta.mail.MessagingException
-import jakarta.mail.internet.MimeMessage
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
-import org.springframework.mail.MailException
-import org.springframework.mail.javamail.JavaMailSender
-import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -19,8 +13,8 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class EmailService(
-    private val javaMailSender: JavaMailSender,
     private val emailConfig: EmailConfig,
+    private val emailClient: EmailClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -52,24 +46,13 @@ class EmailService(
         subject: String,
         htmlContent: String,
     ) {
-        try {
-            val message: MimeMessage = javaMailSender.createMimeMessage()
-            val helper = MimeMessageHelper(message, "UTF-8")
-
-            helper.setTo(to)
-            helper.setSubject(subject)
-            helper.setText(htmlContent, true)
-            helper.setFrom("${emailConfig.fromName} <${emailConfig.fromEmail}>")
-
-            // AWS SES 샌드박스 모드에서는 발신/수신 주소 모두 사전 인증(Verified)이 필요합니다.
-            javaMailSender.send(message)
-        } catch (e: MessagingException) {
-            logger.error("메일 구성 실패: to={}, subject={}", to, subject, e)
-            throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_UNAVAILABLE)
-        } catch (e: MailException) {
-            logger.error("메일 전송 실패: to={}, subject={}", to, subject, e)
-            throw EmailServiceUnavailableException(EmailErrorCode.EMAIL_SERVICE_UNAVAILABLE)
-        }
+        emailClient.sendEmail(
+            to = to,
+            subject = subject,
+            htmlContent = htmlContent,
+            fromEmail = emailConfig.fromEmail,
+            fromName = emailConfig.fromName,
+        )
     }
 
     /**
