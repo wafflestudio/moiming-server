@@ -591,6 +591,120 @@ class RegistrationIntegrationTest
             assertEquals((totalUsers - capacity).toLong(), waitlisted, "WAITLISTED 수가 정확해야 합니다")
         }
 
+        @Test
+        fun `my registrations endpoint paginates without overlap`() {
+            val (_, participantToken) = dataGenerator.generateUser()
+            val registeredEventIds =
+                (1..25).map { index ->
+                    val (host, _) = dataGenerator.generateUser()
+                    val event = createEvent(createdBy = host.id!!, title = "my-registrations-$index")
+                    registerAsUser(event.publicId, participantToken)
+                    event.publicId
+                }
+
+            val page0 =
+                mvc
+                    .perform(
+                        get("/api/registrations/me")
+                            .header("Authorization", "Bearer $participantToken")
+                            .param("page", "0")
+                            .param("size", "10")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.registrations.length()").value(10))
+                    .andReturn()
+
+            val page1 =
+                mvc
+                    .perform(
+                        get("/api/registrations/me")
+                            .header("Authorization", "Bearer $participantToken")
+                            .param("page", "1")
+                            .param("size", "10")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.registrations.length()").value(10))
+                    .andReturn()
+
+            val page2 =
+                mvc
+                    .perform(
+                        get("/api/registrations/me")
+                            .header("Authorization", "Bearer $participantToken")
+                            .param("page", "2")
+                            .param("size", "10")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.registrations.length()").value(5))
+                    .andReturn()
+
+            val page3 =
+                mvc
+                    .perform(
+                        get("/api/registrations/me")
+                            .header("Authorization", "Bearer $participantToken")
+                            .param("page", "3")
+                            .param("size", "10")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.registrations.length()").value(0))
+                    .andReturn()
+
+            val page0Ids = extractMyRegistrationEventPublicIds(page0)
+            val page1Ids = extractMyRegistrationEventPublicIds(page1)
+            val page2Ids = extractMyRegistrationEventPublicIds(page2)
+            val page3Ids = extractMyRegistrationEventPublicIds(page3)
+
+            assertTrue(page0Ids.intersect(page1Ids.toSet()).isEmpty())
+            assertTrue(page0Ids.intersect(page2Ids.toSet()).isEmpty())
+            assertTrue(page1Ids.intersect(page2Ids.toSet()).isEmpty())
+            assertTrue(page3Ids.isEmpty())
+
+            val merged = (page0Ids + page1Ids + page2Ids).toSet()
+            assertEquals(registeredEventIds.toSet(), merged)
+        }
+
+        @Test
+        fun `my registrations endpoint respects size parameter`() {
+            val (_, participantToken) = dataGenerator.generateUser()
+
+            repeat(7) { index ->
+                val (host, _) = dataGenerator.generateUser()
+                val event = createEvent(createdBy = host.id!!, title = "size-check-$index")
+                registerAsUser(event.publicId, participantToken)
+            }
+
+            mvc
+                .perform(
+                    get("/api/registrations/me")
+                        .header("Authorization", "Bearer $participantToken")
+                        .param("page", "0")
+                        .param("size", "3")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.registrations.length()").value(3))
+
+            mvc
+                .perform(
+                    get("/api/registrations/me")
+                        .header("Authorization", "Bearer $participantToken")
+                        .param("page", "1")
+                        .param("size", "3")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.registrations.length()").value(3))
+
+            mvc
+                .perform(
+                    get("/api/registrations/me")
+                        .header("Authorization", "Bearer $participantToken")
+                        .param("page", "2")
+                        .param("size", "3")
+                        .contentType(MediaType.APPLICATION_JSON),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.registrations.length()").value(1))
+        }
+
         private fun registerAsUser(
             eventPublicId: String,
             token: String,
@@ -641,6 +755,12 @@ class RegistrationIntegrationTest
                 .readTree(result.response.contentAsString)
                 .path("participants")
                 .toList()
+
+        private fun extractMyRegistrationEventPublicIds(result: MvcResult): List<String> =
+            mapper
+                .readTree(result.response.contentAsString)
+                .path("registrations")
+                .map { it.path("publicId").asText() }
 
         private fun findRegistration(registrationPublicId: String): Registration {
             val registration = registrationRepository.findByRegistrationPublicId(registrationPublicId)
