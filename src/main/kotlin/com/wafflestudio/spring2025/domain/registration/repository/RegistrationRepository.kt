@@ -80,7 +80,7 @@ interface RegistrationRepository :
 
     @Query(
         """
-        SELECT event_id AS eventId, COUNT(*) AS totalCount
+        SELECT event_id, COUNT(*) AS total_count
         FROM registrations
         WHERE event_id IN (:eventIds) AND status IN (:statuses)
         GROUP BY event_id
@@ -93,9 +93,9 @@ interface RegistrationRepository :
 
     @Query(
         """
-        SELECT registration_public_id AS registrationPublicId,
-               event_id AS eventId,
-               ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY created_at ASC, id ASC) AS waitlistNumber
+        SELECT registration_public_id,
+               event_id,
+               ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY created_at ASC, id ASC) AS waitlist_number
         FROM registrations
         WHERE event_id IN (:eventIds) AND status = :status
         """,
