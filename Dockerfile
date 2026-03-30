@@ -3,7 +3,9 @@ WORKDIR /app
 COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
 COPY src ./src
-RUN gradle build --no-daemon -x test
+RUN --mount=type=secret,id=github_token \
+  GITHUB_TOKEN=$(cat /run/secrets/github_token) \
+  gradle build --no-daemon -x test
 #RUN --mount=type=secret,id=github_token GITHUB_TOKEN=$(cat /run/secrets/github_token) ./gradlew :api:bootJar
 #github_token을 받아서 waffle-spring에서 oci vault 라이브러리를 받아옴.
 

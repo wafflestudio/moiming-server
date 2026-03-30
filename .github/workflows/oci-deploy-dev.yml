@@ -2,7 +2,7 @@ name: Deploy-api-dev
 
 on:
     push:
-        branches: [develop] # 원하는 브랜치로 설정
+        branches: [dev] # 원하는 브랜치로 설정
 
 jobs:
     deploy:

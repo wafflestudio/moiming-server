@@ -2,7 +2,7 @@ name: Deploy-api-prod
 
 on:
     push:
-        branches: [main2] # 원하는 브랜치 설정
+        branches: [main] # 원하는 브랜치 설정
 
 jobs:
     deploy:
