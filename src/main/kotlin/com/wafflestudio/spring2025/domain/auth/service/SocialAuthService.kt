@@ -32,7 +32,7 @@ class SocialAuthService(
                 User(
                     email = userInfo.email,
                     name = userInfo.name,
-                    profileImage = userInfo.profilePicture,
+                    profileImage = null,
                     passwordHash = null,
                 ),
             )
