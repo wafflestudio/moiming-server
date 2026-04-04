@@ -35,9 +35,13 @@ jobs:
 
       - name: Run ktlint
         run: ./gradlew ktlintCheck --no-daemon
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests (includes integration tests)
         run: ./gradlew test --no-daemon
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload test reports
         if: always()

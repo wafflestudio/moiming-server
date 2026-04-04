@@ -70,8 +70,10 @@ dependencies {
     implementation(platform("software.amazon.awssdk:bom:2.41.19"))
     implementation("software.amazon.awssdk:s3")
 
-    // oci vault 의존성
-    implementation("com.wafflestudio.spring:spring-boot-starter-waffle-oci-vault:2.1.0")
+    // oci vault 의존성 (GITHUB_TOKEN 없는 로컬 환경에서는 제외)
+    if (System.getenv("GITHUB_TOKEN") != null) {
+        implementation("com.wafflestudio.spring:spring-boot-starter-waffle-oci-vault:2.1.0")
+    }
 }
 
 kotlin {
