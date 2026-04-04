@@ -1,8 +1,8 @@
 import java.util.Properties
 
 plugins {
-    kotlin("jvm") version "1.9.25"
-    kotlin("plugin.spring") version "1.9.25"
+    kotlin("jvm") version "2.2.0"
+    kotlin("plugin.spring") version "2.2.0"
     id("org.springframework.boot") version "3.5.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.flywaydb.flyway") version "9.22.3"
@@ -15,7 +15,7 @@ description = "seminar-2025-springboot-assignment"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -30,6 +30,13 @@ buildscript {
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://maven.pkg.github.com/wafflestudio/spring-waffle")
+        credentials {
+            username = "wafflestudio"
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 dependencies {
@@ -62,6 +69,11 @@ dependencies {
     // profile_image 업로드 관련 의존성 추가
     implementation(platform("software.amazon.awssdk:bom:2.41.19"))
     implementation("software.amazon.awssdk:s3")
+
+    // oci vault 의존성 (GITHUB_TOKEN 없는 로컬 환경에서는 제외)
+    if (System.getenv("GITHUB_TOKEN") != null) {
+        implementation("com.wafflestudio.spring:spring-boot-starter-waffle-oci-vault:2.1.0")
+    }
 }
 
 kotlin {

@@ -1,0 +1,49 @@
+name: deploy-template
+
+on:
+    workflow_call: #직접실행x
+        inputs:
+            ocir_repository:
+                required: true
+                type: string
+            dockerfile:
+                required: true
+                type: string
+                description: "Dockerfile path (e.g., api/Dockerfile)"
+        secrets:
+            OCI_AUTH_TOKEN:
+                required: true
+
+jobs:
+    deploy:
+        name: Deploy
+        runs-on: ubuntu-24.04-arm
+
+        env:
+            IMAGE_TAG: ${{ github.run_number }} #github.* 변수들은 github 자체 내장
+            BUILD_NUMBER: ${{ github.run_number }}
+            OCIR_REGISTRY: yny.ocir.io #동일
+            OCIR_NAMESPACE: ax1dvc8vmenm # 같은 ocir내에서는 동일
+            OCIR_REPOSITORY: ${{ inputs.ocir_repository }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Login to OCIR
+              run: echo "${{ secrets.OCI_AUTH_TOKEN }}" | docker login $OCIR_REGISTRY -u ax1dvc8vmenm/members/waffle-deployer --password-stdin
+            #알맞게 수정
+
+            - name: Docker build, tag, and push image to OCIR
+              id: build-push-image
+              run: |
+                  echo "${{ github.token }}" > .github_token
+                  docker build \
+                    --secret id=github_token,src=./.github_token \
+                    -f ${{ inputs.dockerfile }} \
+                    -t $OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG \
+                    . \
+                    --platform linux/arm64
+                  rm -f .github_token
+                  docker push $OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG
+                  echo "image=$OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
