@@ -87,9 +87,10 @@ aws:
   allowed-origins: >
     http://localhost:3000,
     http://localhost:5173,
-    https://www.moiming.app,
-    https://moiming.app,
-    https://api.moiming.app
+    https://moiming.wafflestudio.com,
+    https://dev.moiming.wafflestudio.com,
+    https://api.moiming.wafflestudio.com
+    https://api.dev.moiming.wafflestudio.com
 
 server:
   forward-headers-strategy: framework
