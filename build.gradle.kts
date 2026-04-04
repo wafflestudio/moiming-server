@@ -30,13 +30,13 @@ buildscript {
 
 repositories {
     mavenCentral()
-    maven {                                                                                                                
-          url = uri("https://maven.pkg.github.com/wafflestudio/spring-waffle")
-          credentials {       
-              username = "wafflestudio"                                                                                      
-              password = System.getenv("GITHUB_TOKEN")                                                                       
-          }                                                                                                                  
-      }    
+    maven {
+        url = uri("https://maven.pkg.github.com/wafflestudio/spring-waffle")
+        credentials {
+            username = "wafflestudio"
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 dependencies {
@@ -70,7 +70,7 @@ dependencies {
     implementation(platform("software.amazon.awssdk:bom:2.41.19"))
     implementation("software.amazon.awssdk:s3")
 
-    //oci vault 의존성
+    // oci vault 의존성
     implementation("com.wafflestudio.spring:spring-boot-starter-waffle-oci-vault:2.1.0")
 }
 
