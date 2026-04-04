@@ -11,8 +11,8 @@ spring:
   mail:
     host: email-smtp.us-east-1.amazonaws.com
     port: 587
-    username: ${AWS_SES_SMTP_USERNAME:YOUR_SES_SMTP_USERNAME}
-    password: ${AWS_SES_SMTP_PASSWORD:YOUR_SES_SMTP_PASSWORD}
+    username: ${OCI_EMAIL_SMTP_USERNAME:YOUR_OCI_SMTP_USERNAME}
+    password: ${OCI_EMAIL_SMTP_PASSWORD:YOUR_OCI_SMTP_PASSWORD}
     properties:
       mail:
         smtp:
@@ -42,7 +42,7 @@ jwt:
   expiration-in-ms: 86400000
 
 email:
-  from-email: no-reply@moiming.app
+  from-email: moiming@wafflestudio.com
   from-name: 모이밍
 
 oauth:
