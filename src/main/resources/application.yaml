@@ -34,7 +34,7 @@ spring:
     enabled: true
   data:
     redis:
-      host: localhost # valkey 변경 필요
+      host: moiming-valkey
       port: 6379
 
 jwt:
@@ -98,7 +98,7 @@ server:
 spring:
   config:
     activate:
-      on-profile: devx
+      on-profile: dev
   datasource:
     url: jdbc:mysql://10.0.30.217:3306/moiming_dev?allowPublicKeyRetrieval=true
     username: moiming-dev
@@ -113,7 +113,7 @@ oci:
 spring:
   config:
     activate:
-      on-profile: prodx
+      on-profile: prod
   datasource:
     url: jdbc:mysql://10.0.30.217:3306/moiming_prod?allowPublicKeyRetrieval=true
     username: moiming-prod
