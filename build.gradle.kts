@@ -15,7 +15,7 @@ description = "seminar-2025-springboot-assignment"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
