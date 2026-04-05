@@ -72,7 +72,10 @@ dependencies {
 
     // oci vault 의존성 (GITHUB_TOKEN 없는 로컬 환경에서는 제외)
     if (System.getenv("GITHUB_TOKEN") != null) {
+        println("[DEBUG] VAULT_DEP_ADDED (GITHUB_TOKEN length=${System.getenv("GITHUB_TOKEN").length})")
         implementation("com.wafflestudio.spring:spring-boot-starter-waffle-oci-vault:2.1.0")
+    } else {
+        println("[DEBUG] VAULT_DEP_SKIPPED (GITHUB_TOKEN is null)")
     }
 }
 
