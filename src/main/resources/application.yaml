@@ -103,6 +103,7 @@ spring:
   datasource:
     url: jdbc:mysql://10.0.30.217:3306/moiming_dev?allowPublicKeyRetrieval=true
     username: moiming-dev
+    password:
 cors:
   allowed-origins: https://dev.moiming.wafflestudio.com
 oci:
